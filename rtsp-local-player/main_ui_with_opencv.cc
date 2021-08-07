@@ -3,7 +3,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include "stream.h"
+#include "common/media/stream.h"
 
 int main(int argc, char const *argv[]) {
   (void)argc;

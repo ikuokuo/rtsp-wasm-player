@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.10)
 project(rtsp-local-player VERSION 1.0.0 LANGUAGES C CXX CUDA)
 
 set(MY_NAME ${PROJECT_NAME})
-set(MY_ROOT ${PROJECT_SOURCE_DIR})
-get_filename_component(MY_COMMON "${MY_ROOT}/../common" REALPATH)
-get_filename_component(MY_3RDPARTY "${MY_ROOT}/../3rdparty" REALPATH)
+set(MY_CURR ${PROJECT_SOURCE_DIR})
+get_filename_component(MY_ROOT "${MY_CURR}/.." REALPATH)
+get_filename_component(MY_3RDPARTY "${MY_ROOT}/3rdparty" REALPATH)
 
-set(MY_OUTPUT "${MY_ROOT}/_output")
+set(MY_OUTPUT "${MY_CURR}/_output")
 
 # options
 
@@ -20,8 +20,8 @@ macro(msg_var variableName)
   message(STATUS "${variableName}: ${${variableName}}")
 endmacro()
 
+msg_var(MY_CURR)
 msg_var(MY_ROOT)
-msg_var(MY_COMMON)
 msg_var(MY_3RDPARTY)
 
 # cmake
@@ -76,11 +76,11 @@ endif()
 # targets
 
 include_directories(
-  ${MY_COMMON}
+  ${MY_ROOT}
   ${OpenCV_INCLUDE_DIRS}
 )
 
-file(GLOB MY_COMMON_SRCS "${MY_COMMON}/*.cc")
+file(GLOB MY_COMMON_MEDIA_SRCS "${MY_ROOT}/common/media/*.cc")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${MY_OUTPUT}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${MY_OUTPUT}/lib")
@@ -97,7 +97,7 @@ endforeach()
 if(WITH_OPENCV)
 
 add_executable(${MY_NAME}_ocv
-  ${MY_COMMON_SRCS}
+  ${MY_COMMON_MEDIA_SRCS}
   main_ui_with_opencv.cc
 )
 target_link_libraries(${MY_NAME}_ocv

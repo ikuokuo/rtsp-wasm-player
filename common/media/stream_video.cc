@@ -15,7 +15,7 @@ extern "C" {
 
 #include <cassert>
 
-#include "throw_error.h"
+#include "common/throw_error.h"
 
 StreamVideo::StreamVideo(const Stream::Options &options, AVStream *stream)
   : options_(options), stream_(stream), codec_ctx_(nullptr), frame_(nullptr),

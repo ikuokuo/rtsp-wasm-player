@@ -14,8 +14,8 @@ extern "C" {
 
 #include <utility>
 
+#include "common/throw_error.h"
 #include "stream_video.h"
-#include "throw_error.h"
 
 // StreamError
 
