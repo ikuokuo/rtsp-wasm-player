@@ -1,5 +1,7 @@
 #include "stream_video.h"
 
+#include <cassert>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,11 +15,9 @@ extern "C" {
 }
 #endif
 
-#include <cassert>
+#include "common/util/throw_error.h"
 
-#include "common/throw_error.h"
-
-StreamVideo::StreamVideo(const Stream::Options &options, AVStream *stream)
+StreamVideo::StreamVideo(const StreamOptions &options, AVStream *stream)
   : options_(options), stream_(stream), codec_ctx_(nullptr), frame_(nullptr),
     sws_ctx_(nullptr), sws_frame_(nullptr) {
 }
@@ -58,6 +58,7 @@ AVFrame *StreamVideo::GetFrame(AVPacket *packet) {
   int ret = avcodec_send_packet(codec_ctx_, packet);
   if (ret != 0) {
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+      // need handle or notify special error codes here
       return nullptr;
     } else {
       throw StreamError(ret);
@@ -85,6 +86,7 @@ AVFrame *StreamVideo::GetFrame(AVPacket *packet) {
       int align = 1;
       int flags = options_.sws_flags;
 
+      if (pix_fmt == AV_PIX_FMT_NONE) pix_fmt = codec_ctx_->pix_fmt;
       if (width <= 0) width = codec_ctx_->width;
       if (height <= 0) height = codec_ctx_->height;
       if (flags == 0) flags = SWS_BICUBIC;

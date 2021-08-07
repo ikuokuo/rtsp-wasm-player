@@ -13,9 +13,9 @@ int main(int argc, char const *argv[]) {
   FLAGS_v = 2;
   google::InitGoogleLogging(argv[0]);
 
-  Stream::Options options;
+  StreamOptions options{};
   /*{
-    options.method = Stream::METHOD_WEBCAM;
+    options.method = STREAM_METHOD_WEBCAM;
     options.input_url = "/dev/video0";
 
     // v4l2-ctl --list-devices
@@ -36,7 +36,7 @@ int main(int argc, char const *argv[]) {
     --sout '#gather:transcode{vcodec=h264}:rtp{sdp=rtsp://:8554/test}' \
     --network-caching=1500 --sout-all --sout-keep
     */
-    options.method = Stream::METHOD_NETWORK;
+    options.method = STREAM_METHOD_NETWORK;
     options.input_url = "rtsp://127.0.0.1:8554/test";
 
     options.sws_enable = true;

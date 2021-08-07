@@ -12,51 +12,32 @@ extern "C" {
 }
 #endif
 
-#include <utility>
-
-#include "common/throw_error.h"
+#include "common/util/throw_error.h"
 #include "stream_video.h"
-
-// StreamError
-
-StreamError::StreamError(const std::string &what_arg) noexcept
-  : what_message_(std::move(what_arg)) {
-}
-
-StreamError::StreamError(int av_err) noexcept {
-  char str[AV_ERROR_MAX_STRING_SIZE];
-  av_make_error_string(&str[0], AV_ERROR_MAX_STRING_SIZE, av_err);
-  what_message_ = str;
-}
-
-const char *StreamError::what() const noexcept {
-  return what_message_.c_str();
-}
-
-// Stream
 
 Stream::Stream() noexcept
   : is_open_(false), format_ctx_(nullptr), packet_(nullptr) {
 }
 
 Stream::~Stream() noexcept {
+  Close();
 }
 
 bool Stream::IsOpen() const noexcept {
   return is_open_;
 }
 
-void Stream::Open(const Options &options) {
-  if (options.method == METHOD_NONE || options.input_url.empty()) {
+void Stream::Open(const StreamOptions &options) {
+  if (options.method == STREAM_METHOD_NONE || options.input_url.empty()) {
     throw StreamError("Options invalid, method and input_url must set");
   }
   options_ = options;
 
   // init
 
-  if (options.method == METHOD_NETWORK) {
+  if (options.method == STREAM_METHOD_NETWORK) {
     avformat_network_init();
-  } else if (options.method == METHOD_WEBCAM) {
+  } else if (options.method == STREAM_METHOD_WEBCAM) {
     avdevice_register_all();
   } else {
     throw StreamError("Options method invalid");
@@ -73,7 +54,7 @@ void Stream::Open(const Options &options) {
   AVInputFormat *input_fmt = nullptr;
   AVDictionary *input_opt = nullptr;
 
-  if (options.method == METHOD_WEBCAM) {
+  if (options.method == STREAM_METHOD_WEBCAM) {
     input_fmt = av_find_input_format(options.input_format.c_str());
     if (input_fmt == nullptr) {
       throw_error<StreamError>() << "Input format not found: "
@@ -96,7 +77,7 @@ void Stream::Open(const Options &options) {
 
   if (options.rtbufsize > 0) {
     av_dict_set_int(&input_opt, "rtbufsize", options.rtbufsize, 0);
-  } else if (options.method == METHOD_WEBCAM) {
+  } else if (options.method == STREAM_METHOD_WEBCAM) {
     if (options.width > 0 && options.height > 0) {
       int64_t rtbufsize = options.width * options.height;
       rtbufsize *= (options.framerate > 0) ? options.framerate : 15;
@@ -183,11 +164,6 @@ void Stream::Close() {
     format_ctx_ = nullptr;
   }
   is_open_ = false;
-}
-
-std::string Stream::GetPixFmtString(AVPixelFormat pix_fmt) noexcept {
-  auto desc = av_pix_fmt_desc_get(pix_fmt);
-  return desc->name;
 }
 
 std::shared_ptr<StreamSub> Stream::GetStreamSub(AVMediaType type) {
