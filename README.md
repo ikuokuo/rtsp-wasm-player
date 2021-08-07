@@ -51,6 +51,11 @@ mkdir _build; cd _build
 cmake -DCMAKE_INSTALL_PREFIX=$MY_ROOT/3rdparty/glog-0.5 ..
 cmake --build . --target install --config Release -- -j`nproc`
 ln -s glog-0.5 $MY_ROOT/3rdparty/glog
+
+# glew, glfw3
+sudo apt install -y libglew-dev libglfw3-dev
+# glm
+git clone --depth 1 -b 0.9.9.8 https://github.com/g-truc/glm.git $MY_ROOT/3rdparty/glm
 ```
 
 <!--

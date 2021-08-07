@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(rtsp-local-player VERSION 1.0.0 LANGUAGES C CXX CUDA)
+project(rtsp-local-player VERSION 1.0.0 LANGUAGES C CXX)
 
 set(MY_NAME ${PROJECT_NAME})
 set(MY_CURR ${PROJECT_SOURCE_DIR})
@@ -8,21 +8,16 @@ get_filename_component(MY_3RDPARTY "${MY_ROOT}/3rdparty" REALPATH)
 
 set(MY_OUTPUT "${MY_CURR}/_output")
 
-# options
-
-option(WITH_OPENCV      "With OpenCV"     ON)
-option(WITH_OPENGL      "With OpenGL"     ON)
-
-# macros
-
-## msg_var(variableName)
-macro(msg_var variableName)
-  message(STATUS "${variableName}: ${${variableName}}")
-endmacro()
+include(${MY_ROOT}/cmake/global.cmake)
 
 msg_var(MY_CURR)
 msg_var(MY_ROOT)
 msg_var(MY_3RDPARTY)
+
+# options
+
+option(WITH_OPENCV      "With OpenCV"     OFF)
+option(WITH_OPENGL      "With OpenGL"     ON)
 
 # cmake
 
@@ -73,13 +68,21 @@ if(WITH_OPENCV)
   find_package(OpenCV REQUIRED)
 endif()
 
+## opengl
+
+if(WITH_OPENGL)
+  include(${MY_ROOT}/cmake/detect_gl.cmake)
+endif()
+
 # targets
 
 include_directories(
   ${MY_ROOT}
+  ${GL_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
 
+file(GLOB MY_COMMON_GL_SRCS "${MY_ROOT}/common/gl/*.cc")
 file(GLOB MY_COMMON_MEDIA_SRCS "${MY_ROOT}/common/media/*.cc")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${MY_OUTPUT}/lib")
@@ -92,6 +95,8 @@ foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endforeach()
 
+set(MY_TARGETS )
+
 ## ui with opencv
 
 if(WITH_OPENCV)
@@ -103,6 +108,20 @@ add_executable(${MY_NAME}_ocv
 target_link_libraries(${MY_NAME}_ocv
   PkgConfig::ffmpeg glog::glog ${OpenCV_LIBS}
 )
+list(APPEND MY_TARGETS ${MY_NAME}_ocv)
+
+endif()
+
+## ui with opengl
+
+if(WITH_OPENGL)
+
+add_executable(glfw_demo
+  ${MY_COMMON_GL_SRCS}
+  glfw_demo.cc
+)
+target_link_libraries(glfw_demo ${GL_LIBS})
+list(APPEND MY_TARGETS glfw_demo)
 
 endif()
 
@@ -115,7 +134,7 @@ set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 set(CMAKE_MACOSX_RPATH 1)
 #set(CMAKE_INSTALL_RPATH "${MY_CMAKE_RPATH}")
 
-install(TARGETS ${MY_NAME}_ocv
+install(TARGETS ${MY_TARGETS}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
