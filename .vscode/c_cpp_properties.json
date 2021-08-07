@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${env:HOME}/opencv-4/include/opencv4",
+                "${workspaceFolder}/3rdparty/boost/include",
+                "${workspaceFolder}/3rdparty/ffmpeg/include",
+                "${workspaceFolder}/3rdparty/glog/include",
+                "${workspaceFolder}/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu11",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}

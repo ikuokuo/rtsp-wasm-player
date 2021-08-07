@@ -1,0 +1,6 @@
+.DS_Store
+_build/
+_output/
+_install/
+
+/3rdparty/
