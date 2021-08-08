@@ -13,10 +13,7 @@ extern "C" {
 }
 #endif
 
-std::string StreamPixFmtString(AVPixelFormat pix_fmt) noexcept {
-  auto desc = av_pix_fmt_desc_get(pix_fmt);
-  return desc->name;
-}
+#include "common/util/throw_error.h"
 
 // StreamError
 
@@ -32,4 +29,32 @@ StreamError::StreamError(int av_err) noexcept {
 
 const char *StreamError::what() const noexcept {
   return what_message_.c_str();
+}
+
+// to/from string
+
+std::string StreamMethodToString(StreamMethod method) {
+  switch (method) {
+    case STREAM_METHOD_NONE:    return "none";
+    case STREAM_METHOD_NETWORK: return "network";
+    case STREAM_METHOD_WEBCAM:  return "webcam";
+    default: throw StreamError("StreamMethod unknown");
+  }
+}
+
+StreamMethod StreamMethodFromString(const std::string &method) {
+  if (method == "none")     return STREAM_METHOD_NONE;
+  if (method == "network")  return STREAM_METHOD_NETWORK;
+  if (method == "webcam")   return STREAM_METHOD_WEBCAM;
+  throw_error<StreamError>() << "StreamMethod unknown: " << method;
+  return STREAM_METHOD_NONE;
+}
+
+std::string PixelFormatToString(AVPixelFormat pix_fmt) {
+  auto desc = av_pix_fmt_desc_get(pix_fmt);
+  return desc->name;
+}
+
+AVPixelFormat PixelFormatFromString(const std::string &pix_fmt) {
+  return av_get_pix_fmt(pix_fmt.c_str());
 }

@@ -56,6 +56,14 @@ ln -s glog-0.5 $MY_ROOT/3rdparty/glog
 sudo apt install -y libglew-dev libglfw3-dev
 # glm
 git clone --depth 1 -b 0.9.9.8 https://github.com/g-truc/glm.git $MY_ROOT/3rdparty/glm
+
+# yaml-cpp: https://github.com/jbeder/yaml-cpp
+git clone --depth 1 -b yaml-cpp-0.7.0 https://github.com/jbeder/yaml-cpp.git $MY_ROOT/3rdparty/source/yaml-cpp
+cd $MY_ROOT/3rdparty/source/yaml-cpp
+mkdir _build; cd _build
+cmake -DCMAKE_INSTALL_PREFIX=$MY_ROOT/3rdparty/yaml-cpp-0.7.0 -DYAML_CPP_BUILD_TESTS=OFF ..
+cmake --build . --target install --config Release -- -j`nproc`
+ln -s yaml-cpp-0.7.0 $MY_ROOT/3rdparty/yaml-cpp
 ```
 
 <!--
@@ -70,9 +78,19 @@ sudo apt install -y ffmpeg libboost-all-dev libgoogle-glog-dev
 RTSP/Webcam > FFmpeg open and decode to BGR/YUV > OpenCV/OpenGL display
 ```
 
-Build:
+Build and run:
 
 ```bash
 cd rtsp-local-player
-make install
+
+# if wanna enable build with opencv
+# export OpenCV_DIR=~/opencv-4/lib/cmake/opencv4
+
+# build
+make
+
+# run
+./_output/bin/rtsp-local-player_ogl ./cfg_rtsp.yaml
+#  or
+./_output/bin/rtsp-local-player_ocv ./cfg_webcam.yaml
 ```

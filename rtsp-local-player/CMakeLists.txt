@@ -69,6 +69,12 @@ set(glog_DIR "${MY_3RDPARTY}/glog/lib/cmake")
 find_package(glog REQUIRED)
 msg_var(glog_VERSION)
 
+## yaml-cpp
+
+set(yaml-cpp_DIR "${MY_3RDPARTY}/yaml-cpp/share/cmake/yaml-cpp")
+find_package(yaml-cpp REQUIRED)
+msg_var(yaml-cpp_VERSION)
+
 ## opencv
 
 if(WITH_OPENCV)
@@ -113,7 +119,7 @@ add_executable(${MY_NAME}_ocv
   main_ui_with_opencv.cc
 )
 target_link_libraries(${MY_NAME}_ocv
-  PkgConfig::ffmpeg glog::glog ${OpenCV_LIBS}
+  PkgConfig::ffmpeg glog::glog yaml-cpp ${OpenCV_LIBS}
 )
 list(APPEND MY_TARGETS ${MY_NAME}_ocv)
 
@@ -136,7 +142,7 @@ add_executable(${MY_NAME}_ogl
   main_ui_with_opengl.cc
 )
 target_link_libraries(${MY_NAME}_ogl
-  PkgConfig::ffmpeg glog::glog ${GL_LIBS}
+  PkgConfig::ffmpeg glog::glog yaml-cpp ${GL_LIBS}
 )
 list(APPEND MY_TARGETS ${MY_NAME}_ogl)
 

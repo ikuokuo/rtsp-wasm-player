@@ -52,8 +52,6 @@ struct StreamOptions {
   int sws_flags = 0;  // SWS_BICUBIC if 0
 };
 
-std::string StreamPixFmtString(AVPixelFormat pix_fmt) noexcept;
-
 class StreamError : public std::exception {
  public:
   explicit StreamError(const std::string &what_arg) noexcept;
@@ -62,3 +60,11 @@ class StreamError : public std::exception {
  private:
   std::string what_message_;
 };
+
+// to/from string
+
+std::string StreamMethodToString(StreamMethod method);
+StreamMethod StreamMethodFromString(const std::string &method);
+
+std::string PixelFormatToString(AVPixelFormat pix_fmt);
+AVPixelFormat PixelFormatFromString(const std::string &pix_fmt);

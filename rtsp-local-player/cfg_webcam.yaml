@@ -1,0 +1,22 @@
+stream:
+  method: "webcam"
+  input_url: "/dev/video0"
+
+  # v4l2-ctl --list-devices
+  # v4l2-ctl -d 0 --list-formats-ext
+  # ffmpeg -hide_banner -f v4l2 -list_formats all -i /dev/video0
+  input_format: "v4l2"
+  width: 640
+  height: 480
+  framerate: 20
+  pixel_format: "yuyv422"
+
+  sws_enable: true
+  # with opencv
+  sws_dst_pix_fmt: "bgr24"
+  # with opengl
+  # sws_dst_pix_fmt: "yuyv420p"
+
+ui_gl:
+  stream_get_frequency: 20
+  frame_first_wait_secs: 5
