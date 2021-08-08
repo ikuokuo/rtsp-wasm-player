@@ -123,6 +123,16 @@ add_executable(glfw_demo
 target_link_libraries(glfw_demo ${GL_LIBS})
 list(APPEND MY_TARGETS glfw_demo)
 
+add_executable(${MY_NAME}_ogl
+  ${MY_COMMON_GL_SRCS}
+  ${MY_COMMON_MEDIA_SRCS}
+  main_ui_with_opengl.cc
+)
+target_link_libraries(${MY_NAME}_ogl
+  PkgConfig::ffmpeg glog::glog ${GL_LIBS}
+)
+list(APPEND MY_TARGETS ${MY_NAME}_ogl)
+
 endif()
 
 # install

@@ -67,7 +67,7 @@ sudo apt install -y ffmpeg libboost-all-dev libgoogle-glog-dev
 ### RTSP Local Player
 
 ```txt
-RTSP > FFmpeg open and decode to YUV > OpenGL display
+RTSP/Webcam > FFmpeg open and decode to BGR/YUV > OpenCV/OpenGL display
 ```
 
 Build:
