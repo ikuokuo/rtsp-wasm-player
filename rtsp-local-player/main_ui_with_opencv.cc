@@ -5,6 +5,7 @@
 
 #include "common/media/stream.h"
 #include "common/util/options.h"
+#include "common/util/rate.h"
 
 int main(int argc, char const *argv[]) {
   FLAGS_logtostderr = true;
@@ -20,7 +21,8 @@ int main(int argc, char const *argv[]) {
 
   LOG(INFO) << "Load config: " << argv[1];
   StreamOptions options{};
-  if (!StreamOptionsParse(argv[1], &options)) return 1;
+  auto node = YAML::LoadFile(argv[1]);
+  if (!StreamOptionsParse(node, &options)) return 1;
 
   if (!options.sws_enable || options.sws_dst_pix_fmt != AV_PIX_FMT_BGR24) {
     LOG(WARNING) << " sws change to enable and bgr24 (for opencv display)";
@@ -31,10 +33,18 @@ int main(int argc, char const *argv[]) {
   auto win_name = options.input_url;
   cv::namedWindow(win_name);
 
+  int stream_get_frequency = 100;
+  if (node["ui_cv"]) {
+    auto ui_cv = node["ui_cv"];
+    if (ui_cv["stream_get_frequency"])
+      stream_get_frequency = ui_cv["stream_get_frequency"].as<int>();
+  }
+
   try {
     Stream stream;
     stream.Open(options);
 
+    Rate rate(stream_get_frequency);
     while (1) {
       auto frame = stream.GetFrameVideo();
       if (frame != nullptr) {
@@ -42,10 +52,11 @@ int main(int argc, char const *argv[]) {
           frame->data[0], frame->linesize[0]);
         cv::imshow(win_name, image);
       }
-      char key = static_cast<char>(cv::waitKey(10));
+      char key = static_cast<char>(cv::waitKey(1));
       if (key == 27 || key == 'q' || key == 'Q') {  // ESC/Q
         break;
       }
+      rate.Sleep();
     }
 
     stream.Close();

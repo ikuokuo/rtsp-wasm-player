@@ -17,6 +17,9 @@ stream:
   # with opengl
   # sws_dst_pix_fmt: "yuyv420p"
 
+ui_cv:
+  stream_get_frequency: 20
+
 ui_gl:
   stream_get_frequency: 20
   frame_first_wait_secs: 5
