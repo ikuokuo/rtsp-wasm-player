@@ -19,6 +19,14 @@ msg_var(MY_3RDPARTY)
 option(WITH_OPENCV      "With OpenCV"     OFF)
 option(WITH_OPENGL      "With OpenGL"     ON)
 
+#set(OpenCV_DIR "$ENV{HOME}/opencv-4/lib/cmake/opencv4")
+if(NOT OpenCV_DIR)
+  set(OpenCV_DIR "$ENV{OpenCV_DIR}")
+endif()
+if(OpenCV_DIR)
+  set(WITH_OPENCV ON)
+endif()
+
 # cmake
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -64,7 +72,6 @@ msg_var(glog_VERSION)
 ## opencv
 
 if(WITH_OPENCV)
-  set(OpenCV_DIR "$ENV{HOME}/opencv-4/lib/cmake/opencv4")
   find_package(OpenCV REQUIRED)
 endif()
 
