@@ -63,6 +63,9 @@ int main(int argc, char const *argv[]) {
         frame_first = frame;
         cond_frame_first.notify_one();
       }
+    } else if (e->id == STREAM_EVENT_ERROR) {
+      auto event = std::dynamic_pointer_cast<StreamErrorEvent>(e);
+      LOG(ERROR) << event->error.what();
     }
   });
   stream.Start(options, stream_get_frequency);
