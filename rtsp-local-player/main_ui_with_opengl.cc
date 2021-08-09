@@ -34,6 +34,7 @@ int main(int argc, char const *argv[]) {
 
   GlfwFrame ui;
 
+  bool frame_first_got{false};
   AVFrame *frame_first = nullptr;
   std::mutex mutex_frame_first;
   std::condition_variable cond_frame_first;
@@ -48,7 +49,7 @@ int main(int argc, char const *argv[]) {
   }
 
   stream.SetEventCallback([
-    &ui, &frame_first, &mutex_frame_first, &cond_frame_first
+    &ui, &frame_first_got, &frame_first, &mutex_frame_first, &cond_frame_first
   ](std::shared_ptr<StreamEvent> e) {
     if (e->id == STREAM_EVENT_GET_FRAME) {
       auto event = std::dynamic_pointer_cast<StreamFrameEvent>(e);
@@ -57,9 +58,10 @@ int main(int argc, char const *argv[]) {
 
       ui.Update(frame);
 
-      if (frame_first == nullptr) {
+      if (!frame_first_got) {
         // notify get first frame
         std::unique_lock<std::mutex> lock(mutex_frame_first);
+        frame_first_got = true;
         frame_first = frame;
         cond_frame_first.notify_one();
       }
@@ -75,15 +77,18 @@ int main(int argc, char const *argv[]) {
     std::unique_lock<std::mutex> lock(mutex_frame_first);
     cond_frame_first.wait_for(lock,
       std::chrono::seconds(frame_first_wait_secs),
-      [&frame_first]() { return frame_first != nullptr; });
+      [&frame_first_got]() { return frame_first_got; });
   }
   int ret = 0;
-  if (frame_first != nullptr) {
+  if (frame_first_got) {
     LOG(INFO) << "Get first frame: " << frame_first->width << "x"
       << frame_first->height;
     // show ui after get first frame
-    ret =  ui.Run({
-      frame_first->width, frame_first->height, options.input_url});
+    GlfwInitParams params{
+      frame_first->width, frame_first->height, options.input_url
+    };
+    frame_first = nullptr;
+    ret =  ui.Run(params);
   } else {
     LOG(ERROR) << "Get first frame timeout, > " << frame_first_wait_secs
       << " s";
