@@ -1,5 +1,20 @@
 # RTSP Wasm Player
 
+```txt
+# RTSP WebSocket Proxy
+RTSP/Webcam/File > FFmpeg open > Packets > WebSocket
+
+# WS Wasm Player
+WebSocket > Packets > Wasm FFmpeg decode to YUV > WebGL display
+                                                > Wasm OpenGL display
+
+# WS Local Player
+WebSocket > Packets > FFmpeg decode to YUV > OpenGL display
+
+# RTSP Local Player
+RTSP/Webcam/File > FFmpeg open and decode to BGR/YUV > OpenCV/OpenGL display
+```
+
 ## Prerequisites
 
 - Ubuntu 18.04
@@ -16,6 +31,7 @@ export PATH=./cmake-3.21.1-linux-x86_64/bin:$PATH
 Prepare third-party dependencies:
 
 ```bash
+git clone https://github.com/ikuokuo/rtsp-wasm-player.git
 cd rtsp-wasm-player
 export MY_ROOT=`pwd`
 
@@ -72,6 +88,37 @@ sudo apt install -y ffmpeg libboost-all-dev libgoogle-glog-dev
 -->
 
 ## Modules
+
+### RTSP WebSocket Proxy
+
+```txt
+RTSP/Webcam/File > FFmpeg open > Packets > WebSocket
+```
+
+Build and run:
+
+```bash
+cd rtsp-ws-proxy
+
+# build
+make
+
+# run
+./_output/bin/rtsp-ws-proxy ./config.yaml
+```
+
+### WS Wasm Player
+
+```txt
+WebSocket > Packets > Wasm FFmpeg decode to YUV > WebGL display
+                                                > Wasm OpenGL display
+```
+
+### WS Local Player
+
+```txt
+WebSocket > Packets > FFmpeg decode to YUV > OpenGL display
+```
 
 ### RTSP Local Player
 
