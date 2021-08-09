@@ -39,7 +39,8 @@ cd $MY_ROOT/3rdparty/source/ffmpeg
 --enable-decoder=hevc --enable-parser=hevc \
 --enable-hwaccel=h264_nvdec --enable-hwaccel=hevc_nvdec \
 --enable-demuxer=rtsp \
---enable-demuxer=rawvideo --enable-decoder=rawvideo --enable-indev=v4l2
+--enable-demuxer=rawvideo --enable-decoder=rawvideo --enable-indev=v4l2 \
+--enable-protocol=file
 make -j`nproc`
 make install
 ln -s ffmpeg-4.4 $MY_ROOT/3rdparty/ffmpeg
@@ -75,7 +76,7 @@ sudo apt install -y ffmpeg libboost-all-dev libgoogle-glog-dev
 ### RTSP Local Player
 
 ```txt
-RTSP/Webcam > FFmpeg open and decode to BGR/YUV > OpenCV/OpenGL display
+RTSP/Webcam/File > FFmpeg open and decode to BGR/YUV > OpenCV/OpenGL display
 ```
 
 Build and run:

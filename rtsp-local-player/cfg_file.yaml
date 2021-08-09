@@ -1,0 +1,17 @@
+stream:
+  # ffprobe -hide_banner ../data/test.mp4
+  method: "file"
+  input_url: "../data/test.mp4"
+
+  sws_enable: true
+  # with opencv
+  sws_dst_pix_fmt: "bgr24"
+  # with opengl
+  # sws_dst_pix_fmt: "yuyv420p"
+
+ui_cv:
+  stream_get_frequency: 50
+
+ui_gl:
+  stream_get_frequency: 50
+  frame_first_wait_secs: 5

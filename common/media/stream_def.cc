@@ -36,6 +36,7 @@ const char *StreamError::what() const noexcept {
 std::string StreamMethodToString(StreamMethod method) {
   switch (method) {
     case STREAM_METHOD_NONE:    return "none";
+    case STREAM_METHOD_FILE:    return "file";
     case STREAM_METHOD_NETWORK: return "network";
     case STREAM_METHOD_WEBCAM:  return "webcam";
     default: throw StreamError("StreamMethod unknown");
@@ -44,6 +45,7 @@ std::string StreamMethodToString(StreamMethod method) {
 
 StreamMethod StreamMethodFromString(const std::string &method) {
   if (method == "none")     return STREAM_METHOD_NONE;
+  if (method == "file")     return STREAM_METHOD_FILE;
   if (method == "network")  return STREAM_METHOD_NETWORK;
   if (method == "webcam")   return STREAM_METHOD_WEBCAM;
   throw_error<StreamError>() << "StreamMethod unknown: " << method;

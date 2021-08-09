@@ -35,7 +35,9 @@ void Stream::Open(const StreamOptions &options) {
 
   // init
 
-  if (options.method == STREAM_METHOD_NETWORK) {
+  if (options.method == STREAM_METHOD_FILE) {
+    // ignore
+  } else if (options.method == STREAM_METHOD_NETWORK) {
     avformat_network_init();
   } else if (options.method == STREAM_METHOD_WEBCAM) {
     avdevice_register_all();
