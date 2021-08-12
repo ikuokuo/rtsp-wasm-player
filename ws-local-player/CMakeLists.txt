@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(rtsp-ws-proxy VERSION 1.0.0 LANGUAGES C CXX)
+project(ws-local-player VERSION 1.0.0 LANGUAGES C CXX)
 
 set(MY_NAME ${PROJECT_NAME})
 set(MY_CURR ${PROJECT_SOURCE_DIR})
@@ -99,14 +99,14 @@ foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endforeach()
 
-## rtsp-ws-proxy
+## ws-local-player
 
-add_executable(rtsp-ws-proxy
+add_executable(ws-local-player
   ${MY_COMMON_MEDIA_SRCS}
   main.cc
-  ws_server.cc
+  ws_client.cc
 )
-target_link_libraries(rtsp-ws-proxy
+target_link_libraries(ws-local-player
   ${Boost_LIBRARIES} PkgConfig::ffmpeg glog::glog yaml-cpp
 )
 
@@ -119,7 +119,7 @@ set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 set(CMAKE_MACOSX_RPATH 1)
 #set(CMAKE_INSTALL_RPATH "${MY_CMAKE_RPATH}")
 
-install(TARGETS rtsp-ws-proxy
+install(TARGETS ws-local-player
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

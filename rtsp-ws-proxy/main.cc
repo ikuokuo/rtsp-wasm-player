@@ -15,6 +15,9 @@ extern "C" {
 #include <glog/logging.h>
 #include <boost/version.hpp>
 
+#include "common/util/options.h"
+#include "ws_server.h"
+
 int main(int argc, char const *argv[]) {
   (void)argc;
   FLAGS_logtostderr = true;
@@ -30,5 +33,33 @@ int main(int argc, char const *argv[]) {
   LOG(INFO) << "  libavformat: " << AV_STRINGIFY(LIBAVFORMAT_VERSION);
   LOG(INFO) << "  libavutil: " << AV_STRINGIFY(LIBAVUTIL_VERSION);
   LOG(INFO) << "  libswscale: " << AV_STRINGIFY(LIBSWSCALE_VERSION);
-  return 0;
+
+  if (argc < 2) {
+    LOG(ERROR) << "Usage: <program> config.yaml";
+    return 1;
+  }
+
+  std::string address = "0.0.0.0";
+  int port = 8080;
+  int threads = 3;
+
+  try {
+    auto node = YAML::LoadFile(argv[1]);
+    LOG(INFO) << "Load config success: " << argv[1];
+
+    auto node_server = node["server"];
+    if (node_server) {
+      address = node_server["address"].as<std::string>();
+      port = node_server["port"].as<int>();
+      threads = node_server["threads"].as<int>();
+    }
+  } catch (const std::exception &e) {
+    LOG(INFO) << "Load config fail, " << e.what();
+    return EXIT_FAILURE;
+  }
+
+  WsServer server(address, port, threads);
+  server.Run();
+
+  return EXIT_SUCCESS;
 }

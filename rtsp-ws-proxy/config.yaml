@@ -1,0 +1,28 @@
+server:
+  address: "0.0.0.0"
+  port: 8080
+  threads: 3
+
+streams:
+  -
+    id: "a"
+    method: "file"
+    input_url: "../data/test.mp4"
+    sws_enable: false
+  -
+    id: "b"
+    method: "network"
+    input_url: "rtsp://127.0.0.1:8554/test"
+    sws_enable: false
+  -
+    id: "c"
+    method: "webcam"
+    input_url: "/dev/video0"
+
+    input_format: "v4l2"
+    width: 640
+    height: 480
+    framerate: 20
+    pixel_format: "yuyv422"
+
+    sws_enable: false
