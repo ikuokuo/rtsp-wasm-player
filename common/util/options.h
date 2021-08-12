@@ -1,6 +1,5 @@
 #pragma once
 
-#include <glog/logging.h>
 #include <yaml-cpp/yaml.h>
 
 #include <string>
@@ -73,18 +72,13 @@ struct convert<StreamOptions> {
 }  // namespace YAML
 
 inline
-bool StreamOptionsParse(const YAML::Node &node, StreamOptions *opts,
+void StreamOptionsParse(const YAML::Node &node, StreamOptions *opts,
                         const std::string &key = "stream") {
-  try {
-    *opts = node[key].as<StreamOptions>();
-    return true;
-  } catch (const std::exception &e) {
-    LOG(ERROR) << "StreamOptions parse fail: " << e.what();
-    return false;
-  }
+  *opts = node[key].as<StreamOptions>();
 }
 
 inline
-bool StreamOptionsParse(const std::string &path, StreamOptions *opts) {
-  return StreamOptionsParse(YAML::LoadFile(path), opts);
+void StreamOptionsParse(const std::string &path, StreamOptions *opts,
+                        const std::string &key = "stream") {
+  StreamOptionsParse(YAML::LoadFile(path), opts, key);
 }

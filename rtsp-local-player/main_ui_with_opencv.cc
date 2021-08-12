@@ -20,9 +20,15 @@ int main(int argc, char const *argv[]) {
   }
 
   LOG(INFO) << "Load config: " << argv[1];
+  YAML::Node node;
   StreamOptions options{};
-  auto node = YAML::LoadFile(argv[1]);
-  if (!StreamOptionsParse(node, &options)) return 1;
+  try {
+    node = YAML::LoadFile(argv[1]);
+    StreamOptionsParse(node, &options);
+  } catch (const std::exception &e) {
+    LOG(ERROR) << " parse options fail, " << e.what();
+    return 1;
+  }
 
   if (!options.sws_enable || options.sws_dst_pix_fmt != AV_PIX_FMT_BGR24) {
     LOG(WARNING) << " sws change to enable and bgr24 (for opencv display)";
