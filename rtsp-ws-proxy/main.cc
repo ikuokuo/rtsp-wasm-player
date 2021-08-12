@@ -39,26 +39,30 @@ int main(int argc, char const *argv[]) {
     return 1;
   }
 
-  std::string address = "0.0.0.0";
-  int port = 8080;
-  int threads = 3;
-
+  WsServerOptions options{};
   try {
     auto node = YAML::LoadFile(argv[1]);
     LOG(INFO) << "Load config success: " << argv[1];
 
     auto node_server = node["server"];
     if (node_server) {
-      address = node_server["address"].as<std::string>();
-      port = node_server["port"].as<int>();
-      threads = node_server["threads"].as<int>();
+      if (node_server["addr"])
+        options.addr = node_server["addr"].as<std::string>();
+      if (node_server["port"])
+        options.port = node_server["port"].as<int>();
+      if (node_server["threads"])
+        options.threads = node_server["threads"].as<int>();
+      if (node_server["http_enable"])
+        options.http_enable = node_server["http_enable"].as<bool>();
+      if (node_server["http_doc_root"])
+        options.http_doc_root = node_server["http_doc_root"].as<std::string>();
     }
   } catch (const std::exception &e) {
-    LOG(INFO) << "Load config fail, " << e.what();
+    LOG(ERROR) << "Load config fail, " << e.what();
     return EXIT_FAILURE;
   }
 
-  WsServer server(address, port, threads);
+  WsServer server(options);
   server.Run();
 
   return EXIT_SUCCESS;

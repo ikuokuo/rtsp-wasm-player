@@ -2,15 +2,19 @@
 
 #include <glog/logging.h>
 
+#include <chrono>
 #include <functional>
+#include <thread>
+
+#include <boost/beast/websocket.hpp>
 
 namespace asio = boost::asio;
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace websocket = beast::websocket;
 
-WsClient::WsClient(const std::string &host, int port)
-  : host_(host), port_(port) {
+WsClient::WsClient(const WsClientOptions &options)
+  : options_(options) {
 }
 
 WsClient::~WsClient() {
@@ -32,6 +36,12 @@ void WsClient::Run() {
   ioc.run();
 }
 
+void WsClient::OnFail(beast::error_code ec, char const* what) {
+  if (options_.on_fail) {
+    options_.on_fail(ec, what);
+  }
+}
+
 // Sends a WebSocket message and prints the response
 void WsClient::DoSession(
     boost::asio::io_context &ioc,  // NOLINT
@@ -42,19 +52,19 @@ void WsClient::DoSession(
   asio::ip::tcp::resolver resolver(ioc);
   websocket::stream<beast::tcp_stream> ws(ioc);
 
-  auto host = host_;
-  auto port = std::to_string(port_);
+  auto host = options_.host;
+  auto port = std::to_string(options_.port);
 
   // Look up the domain name
   auto const results = resolver.async_resolve(host, port, yield[ec]);
-  if (ec) return OnError(ec, "resolve");
+  if (ec) return OnFail(ec, "resolve");
 
   // Set a timeout on the operation
   beast::get_lowest_layer(ws).expires_after(std::chrono::seconds(30));
 
   // Make the connection on the IP address we get from a lookup
   auto ep = beast::get_lowest_layer(ws).async_connect(results, yield[ec]);
-  if (ec) return OnError(ec, "connect");
+  if (ec) return OnFail(ec, "connect");
 
   // Update the host string. This will provide the value of the
   // Host HTTP header during the WebSocket handshake.
@@ -78,30 +88,26 @@ void WsClient::DoSession(
       }));
 
   // Perform the websocket handshake
-  ws.async_handshake(host, "/", yield[ec]);
-  if (ec) return OnError(ec, "handshake");
+  ws.async_handshake(host, "/hello", yield[ec]);
+  if (ec) return OnFail(ec, "handshake");
 
   // Send the message
   ws.async_write(asio::buffer(std::string("hello")), yield[ec]);
-  if (ec) return OnError(ec, "write");
+  if (ec) return OnFail(ec, "write");
 
   // This buffer will hold the incoming message
   beast::flat_buffer buffer;
 
   // Read a message into our buffer
   ws.async_read(buffer, yield[ec]);
-  if (ec) return OnError(ec, "read");
+  if (ec) return OnFail(ec, "read");
 
   // Close the WebSocket connection
   ws.async_close(websocket::close_code::normal, yield[ec]);
-  if (ec) return OnError(ec, "close");
+  if (ec) return OnFail(ec, "close");
 
   // If we get here then the connection is closed gracefully
 
   // The make_printable() function helps print a ConstBufferSequence
   LOG(INFO) << beast::make_printable(buffer.data());
-}
-
-void WsClient::OnError(boost::beast::error_code ec, char const *what) {
-  LOG(ERROR) << what << ": " << ec.message();
 }

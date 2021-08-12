@@ -104,6 +104,7 @@ endforeach()
 add_executable(rtsp-ws-proxy
   ${MY_COMMON_MEDIA_SRCS}
   main.cc
+  ws_ext.cc
   ws_server.cc
 )
 target_link_libraries(rtsp-ws-proxy
