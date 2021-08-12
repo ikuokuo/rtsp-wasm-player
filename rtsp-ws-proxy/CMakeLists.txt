@@ -7,6 +7,9 @@ get_filename_component(MY_ROOT "${MY_CURR}/.." REALPATH)
 get_filename_component(MY_3RDPARTY "${MY_ROOT}/3rdparty" REALPATH)
 
 set(MY_OUTPUT "${MY_CURR}/_output")
+if(DEFINED ENV{MY_OUTPUT})
+  set(MY_OUTPUT $ENV{MY_OUTPUT})
+endif()
 
 include(${MY_ROOT}/cmake/global.cmake)
 

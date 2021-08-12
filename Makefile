@@ -10,9 +10,9 @@ SHELL := /bin/bash
 ECHO ?= echo -e
 FIND ?= find
 
-BUILD_DIR ?= _build
-OUTPUT_DIR ?= _output
-INSTALL_DIR ?= $(MKFILE_DIR)/../_install
+BUILD_DIR ?= $(MKFILE_DIR)/_build
+OUTPUT_DIR ?= $(MKFILE_DIR)/_output
+INSTALL_DIR ?= $(MKFILE_DIR)/_install
 
 CMAKE ?= cmake
 CMAKE_OPTIONS ?= \
@@ -51,7 +51,8 @@ endef
 .PHONY: build
 build:
 	@$(call md,$(BUILD_DIR))
-	@cd $(BUILD_DIR); \
+	@[ -z $$MY_OUTPUT ] && export MY_OUTPUT=${OUTPUT_DIR}; \
+	cd $(BUILD_DIR); \
 	$(CMAKE) $(CMAKE_OPTIONS) ..; \
 	$(MAKE) $(MAKE_OPTIONS)
 
@@ -63,6 +64,7 @@ install: build
 clean:
 	@$(call rm,$(BUILD_DIR))
 	@$(call rm,$(OUTPUT_DIR))
+	@$(call rm,$(INSTALL_DIR))
 
 .PHONY: print
 print:

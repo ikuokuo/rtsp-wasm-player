@@ -48,7 +48,7 @@ endef
 
 # Goals
 
-.PHONY: build_
+.PHONY: build
 build:
 	@$(call md,$(BUILD_DIR))
 	@cd $(BUILD_DIR); \
