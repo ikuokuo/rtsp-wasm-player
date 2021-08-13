@@ -3,8 +3,8 @@
 #include "stream.h"
 #include "common/util/rate.h"
 
-StreamThread::StreamThread()
-  : frequency_(20), event_cb_(nullptr), is_running_(false) {
+StreamThread::StreamThread(std::initializer_list<AVMediaType> types)
+  : get_types_(types), frequency_(20), event_cb_(nullptr), is_running_(false) {
 }
 
 StreamThread::~StreamThread() {
@@ -38,34 +38,36 @@ void StreamThread::Stop() {
 
 void StreamThread::Run() {
   try {
-    Stream stream;
+    auto stream = std::make_shared<Stream>();
 
-    DispatchEvent<StreamEvent>(STREAM_EVENT_OPEN);
-    stream.Open(options_);
-    DispatchEvent<StreamEvent>(STREAM_EVENT_OPENED);
+    DispatchEvent<StreamEvent>(STREAM_EVENT_OPEN, stream);
+    stream->Open(options_);
+    DispatchEvent<StreamEvent>(STREAM_EVENT_OPENED, stream);
 
     Rate rate(frequency_);
     while (is_running_) {
-      auto packet = stream.GetPacket(false);
-      DispatchEvent<StreamPacketEvent>(packet);
+      auto packet = stream->GetPacket(false);
+      DispatchEvent<StreamPacketEvent>(stream, packet);
 
-      auto frame = stream.GetFrame(AVMEDIA_TYPE_VIDEO, packet, false);
-      if (frame == nullptr) {
-        // could handle more events, such as EOF
-      } else {
-        DispatchEvent<StreamFrameEvent>(AVMEDIA_TYPE_VIDEO, frame);
+      for (auto &&type : get_types_) {
+        auto frame = stream->GetFrame(type, packet, false);
+        if (frame == nullptr) {
+          // could handle more events, such as EOF
+        } else {
+          DispatchEvent<StreamFrameEvent>(stream, type, frame);
+        }
       }
 
-      stream.UnrefPacket();
+      stream->UnrefPacket();
 
       rate.Sleep();
     }
 
-    DispatchEvent<StreamEvent>(STREAM_EVENT_CLOSE);
-    stream.Close();
-    DispatchEvent<StreamEvent>(STREAM_EVENT_CLOSED);
+    DispatchEvent<StreamEvent>(STREAM_EVENT_CLOSE, stream);
+    stream->Close();
+    DispatchEvent<StreamEvent>(STREAM_EVENT_CLOSED, stream);
   } catch (const StreamError &err) {
-    DispatchEvent<StreamErrorEvent>(err);
+    DispatchEvent<StreamErrorEvent>(nullptr, err);
   }
 }
 

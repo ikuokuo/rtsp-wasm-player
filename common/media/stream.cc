@@ -168,7 +168,16 @@ void Stream::Close() {
   is_open_ = false;
 }
 
-std::shared_ptr<StreamSub> Stream::GetStreamSub(AVMediaType type) {
+
+StreamOptions Stream::GetOptions() const {
+  return options_;
+}
+
+Stream::stream_subs_t Stream::GetStreamSubs() const {
+  return stream_subs_;
+}
+
+Stream::stream_sub_t Stream::GetStreamSub(AVMediaType type) const {
   try {
     return stream_subs_.at(type);
   } catch (const std::out_of_range &e) {

@@ -5,6 +5,7 @@
 #include <memory>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include "stream.h"
 
@@ -20,31 +21,37 @@ enum StreamEventId {
 
 class StreamEvent {
  public:
-  explicit StreamEvent(StreamEventId id) : id(id) {}
+  StreamEvent(StreamEventId id, std::shared_ptr<Stream> stream)
+      : id(id), stream(stream) {}
   virtual ~StreamEvent() = default;
   StreamEventId id;
+  std::shared_ptr<Stream> stream;
 };
 
 class StreamErrorEvent : public StreamEvent {
  public:
-  explicit StreamErrorEvent(const StreamError &error)
-    : StreamEvent(StreamEventId::STREAM_EVENT_ERROR), error(error) {}
+  StreamErrorEvent(std::shared_ptr<Stream> stream, const StreamError &error)
+      : StreamEvent(StreamEventId::STREAM_EVENT_ERROR, stream), error(error) {}
   virtual ~StreamErrorEvent() = default;
   StreamError error;
 };
 
 class StreamPacketEvent : public StreamEvent {
  public:
-  explicit StreamPacketEvent(AVPacket *packet)
-    : StreamEvent(StreamEventId::STREAM_EVENT_GET_PACKET), packet(packet) {}
+  StreamPacketEvent(std::shared_ptr<Stream> stream, AVPacket *packet)
+    : StreamEvent(StreamEventId::STREAM_EVENT_GET_PACKET, stream),
+      packet(packet) {}
   virtual ~StreamPacketEvent() = default;
   AVPacket *packet;
 };
 
 class StreamFrameEvent : public StreamEvent {
  public:
-  StreamFrameEvent(AVMediaType type, AVFrame *frame)
-    : StreamEvent(StreamEventId::STREAM_EVENT_GET_FRAME), type(type),
+  StreamFrameEvent(std::shared_ptr<Stream> stream,
+                   AVMediaType type,
+                   AVFrame *frame)
+    : StreamEvent(StreamEventId::STREAM_EVENT_GET_FRAME, stream),
+      type(type),
       frame(frame) {}
   virtual ~StreamFrameEvent() = default;
   AVMediaType type;
@@ -55,7 +62,7 @@ class StreamThread {
  public:
   using event_callback_t = std::function<void(std::shared_ptr<StreamEvent> e)>;
 
-  StreamThread();
+  StreamThread(std::initializer_list<AVMediaType> types = {AVMEDIA_TYPE_VIDEO});
   ~StreamThread();
 
   bool IsRunning() const;
@@ -72,6 +79,8 @@ class StreamThread {
   void DispatchEvent(Args&&... args) {
     DispatchEvent(std::make_shared<E>(std::forward<Args>(args)...));
   }
+
+  std::vector<AVMediaType> get_types_;
 
   StreamOptions options_;
   int frequency_;

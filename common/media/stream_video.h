@@ -29,7 +29,6 @@ class StreamVideo : public StreamSub {
 
  private:
   StreamOptions options_;
-  AVStream *stream_;
 
   AVCodecContext *codec_ctx_;
   AVFrame *frame_;
