@@ -18,9 +18,18 @@ struct WsServerOptions {
   bool http_enable          = true;
   std::string http_doc_root = ".";
 
+  bool signal_exit_enable = true;
+  bool thread_main_block = true;
+  bool thread_exit_block = true;
+
   using on_fail_t =
       std::function<void(boost::beast::error_code ec, char const* what)>;
+  using on_stop_t = std::function<void()>;
+  using on_exit_t = std::function<void()>;
+
   on_fail_t on_fail = ws_ext::fail;
+  on_stop_t on_stop = nullptr;
+  on_exit_t on_exit = nullptr;
 };
 
 class WsServer {

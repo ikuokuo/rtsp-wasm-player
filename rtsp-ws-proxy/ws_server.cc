@@ -2,8 +2,6 @@
 
 #include <glog/logging.h>
 
-#include <functional>
-#include <memory>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -43,29 +41,45 @@ void WsServer::Run() {
       std::placeholders::_1));
 
   // Capture SIGINT and SIGTERM to perform a clean shutdown
-  asio::signal_set signals(ioc, SIGINT, SIGTERM);
-  signals.async_wait([&](beast::error_code const&, int) {
-    // Stop the `io_context`. This will cause `run()`
-    // to return immediately, eventually destroying the
-    // `io_context` and all of the sockets in it.
-    ioc.stop();
-  });
+  std::unique_ptr<asio::signal_set> signals{nullptr};
+  if (options_.signal_exit_enable) {
+    signals.reset(new asio::signal_set(ioc, SIGINT, SIGTERM));
+    signals->async_wait([&](beast::error_code const&, int) {
+      // Stop the `io_context`. This will cause `run()`
+      // to return immediately, eventually destroying the
+      // `io_context` and all of the sockets in it.
+      ioc.stop();
+      if (options_.on_stop) options_.on_stop();
+    });
+  }
 
   // Run the I/O service on the requested number of threads
   std::vector<std::thread> v;
-  v.reserve(options_.threads - 1);
-  for (auto i = options_.threads - 1; i > 0; --i) {
-    v.emplace_back([&ioc] {
-      ioc.run();
-    });
+  if (options_.thread_main_block) {
+    v.reserve(options_.threads - 1);
+    for (auto i = options_.threads - 1; i > 0; --i) {
+      v.emplace_back([&ioc] {
+        ioc.run();
+      });
+    }
+    ioc.run();
+    // (If we get here, it means we got a SIGINT or SIGTERM)
+  } else {
+    v.reserve(options_.threads);
+    for (auto i = options_.threads; i > 0; --i) {
+      v.emplace_back([&ioc] {
+        ioc.run();
+      });
+    }
   }
-  ioc.run();
 
-  // (If we get here, it means we got a SIGINT or SIGTERM)
+  if (options_.on_exit) options_.on_exit();
 
-  // Block until all the threads exit
-  for (auto &t : v)
-    t.join();
+  if (options_.thread_exit_block) {
+    // Block until all the threads exit
+    for (auto &t : v)
+      t.join();
+  }
 }
 
 void WsServer::OnFail(beast::error_code ec, char const* what) {
