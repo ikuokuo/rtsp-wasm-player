@@ -56,7 +56,8 @@ cd $MY_ROOT/3rdparty/source/ffmpeg
 --enable-hwaccel=h264_nvdec --enable-hwaccel=hevc_nvdec \
 --enable-demuxer=rtsp \
 --enable-demuxer=rawvideo --enable-decoder=rawvideo --enable-indev=v4l2 \
---enable-protocol=file
+--enable-protocol=file \
+--enable-bsf=h264_mp4toannexb --enable-bsf=hevc_mp4toannexb --enable-bsf=null
 make -j`nproc`
 make install
 ln -s ffmpeg-4.4 $MY_ROOT/3rdparty/ffmpeg

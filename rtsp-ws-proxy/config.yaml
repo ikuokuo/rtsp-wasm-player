@@ -28,3 +28,5 @@ streams:
     pixel_format: "yuyv422"
 
     sws_enable: false
+
+stream_get_frequency: 50

@@ -13,9 +13,14 @@ extern "C" {
 #endif
 
 #include <glog/logging.h>
+
+#include <map>
+#include <vector>
+
 #include <boost/version.hpp>
 
 #include "common/util/options.h"
+#include "stream_handler.h"
 #include "ws_server.h"
 
 int main(int argc, char const *argv[]) {
@@ -40,6 +45,8 @@ int main(int argc, char const *argv[]) {
   }
 
   WsServerOptions options{};
+  std::map<std::string, StreamOptions> stream_options;
+  int stream_get_frequency = 20;
   try {
     auto node = YAML::LoadFile(argv[1]);
     LOG(INFO) << "Load config success: " << argv[1];
@@ -57,13 +64,44 @@ int main(int argc, char const *argv[]) {
       if (node_server["http_doc_root"])
         options.http_doc_root = node_server["http_doc_root"].as<std::string>();
     }
+
+    auto node_streams = node["streams"];
+    if (node_streams) {
+      for (auto it = node_streams.begin(); it != node_streams.end(); ++it) {
+        auto id = (*it)["id"].as<std::string>();
+        stream_options[id] = it->as<StreamOptions>();
+      }
+    }
+
+    if (node["stream_get_frequency"])
+      stream_get_frequency = node["stream_get_frequency"].as<int>();
   } catch (const std::exception &e) {
     LOG(ERROR) << "Load config fail, " << e.what();
     return EXIT_FAILURE;
   }
 
+  if (stream_options.empty()) {
+    LOG(ERROR) << "Streams is empty!";
+    return EXIT_FAILURE;
+  }
+
+  std::vector<std::shared_ptr<StreamHandler>> streams;
+  for (auto &&entry : stream_options) {
+    auto id = entry.first;
+    auto stream = std::make_shared<StreamHandler>(
+      id, entry.second, stream_get_frequency,
+      [id](Stream::stream_sub_t stream, AVPacket *packet) {
+        (void)stream;
+        LOG(INFO) << "Stream[" << id << "] packet size=" << packet->size;
+      });
+    stream->Start();
+    streams.push_back(stream);
+  }
+
   WsServer server(options);
   server.Run();
 
+  for (auto &&s : streams)
+    s->Stop();
   return EXIT_SUCCESS;
 }
