@@ -8,7 +8,7 @@
 
 namespace YAML {
 
-template<>
+template <>
 struct convert<StreamOptions> {
   static Node encode(const StreamOptions& opts) {
     Node node;

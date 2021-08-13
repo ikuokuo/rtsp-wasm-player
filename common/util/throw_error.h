@@ -15,7 +15,7 @@ struct throw_error {
     throw E(ss.str());
   }
 
-  template<class T>
+  template <class T>
   throw_error &operator<<(const T &val) {
     ss << val;
     return *this;
