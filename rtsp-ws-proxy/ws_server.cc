@@ -118,7 +118,7 @@ void WsServer::DoListen(
     if (ec) {
       OnFail(ec, "accept");
     } else {
-      if (options_.http_enable && !options_.http_doc_root.empty()) {
+      if (options_.http_enable) {
         asio::spawn(acceptor.get_executor(), std::bind(
             &WsServer::DoSessionHTTP,
             this,

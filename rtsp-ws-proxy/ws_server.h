@@ -16,6 +16,7 @@ struct WsServerOptions {
   int threads       = 3;
 
   bool http_enable          = true;
+  // Notice: "", "/", "//" will access the fiesystem root
   std::string http_doc_root = ".";
 
   bool signal_exit_enable = true;
