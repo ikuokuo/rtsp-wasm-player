@@ -1,5 +1,5 @@
 # include_guard: https://cmake.org/cmake/help/latest/command/include_guard.html
-include_guard(GLOBAL)
+include_guard()
 
 # macros
 

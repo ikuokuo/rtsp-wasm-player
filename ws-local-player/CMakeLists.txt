@@ -80,13 +80,19 @@ set(yaml-cpp_DIR "${MY_3RDPARTY}/yaml-cpp/share/cmake/yaml-cpp")
 find_package(yaml-cpp REQUIRED)
 msg_var(yaml-cpp_VERSION)
 
+## opengl
+
+include(${MY_ROOT}/cmake/detect_gl.cmake)
+
 # targets
 
 include_directories(
   ${MY_ROOT}
   ${Boost_INCLUDE_DIRS}
+  ${GL_INCLUDE_DIRS}
 )
 
+file(GLOB MY_COMMON_GL_SRCS "${MY_ROOT}/common/gl/*.cc")
 file(GLOB MY_COMMON_MEDIA_SRCS "${MY_ROOT}/common/media/*.cc")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${MY_OUTPUT}/lib")
@@ -102,12 +108,13 @@ endforeach()
 ## ws-local-player
 
 add_executable(ws-local-player
+  ${MY_COMMON_GL_SRCS}
   ${MY_COMMON_MEDIA_SRCS}
   main.cc
   ws_client.cc
 )
 target_link_libraries(ws-local-player
-  ${Boost_LIBRARIES} PkgConfig::ffmpeg glog::glog yaml-cpp
+  ${Boost_LIBRARIES} PkgConfig::ffmpeg glog::glog yaml-cpp ${GL_LIBS}
 )
 
 # install
