@@ -110,8 +110,7 @@ void StreamHandler::OnEventPacket(std::shared_ptr<StreamPacketEvent> e) {
 
   int ret = av_bsf_send_packet(bsf_ctx_, packet);
   if (ret != 0) {
-    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-      // need handle or notify special error codes here
+    if (ret == AVERROR(EAGAIN)) {
       return;
     } else {
       throw StreamError(ret);
@@ -120,7 +119,7 @@ void StreamHandler::OnEventPacket(std::shared_ptr<StreamPacketEvent> e) {
 
   ret = av_bsf_receive_packet(bsf_ctx_, bsf_packet_);
   if (ret != 0) {
-    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+    if (ret == AVERROR(EAGAIN)) {
       av_packet_unref(bsf_packet_);
       return;
     } else {

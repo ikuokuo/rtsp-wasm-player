@@ -57,8 +57,7 @@ AVFrame *StreamVideo::GetFrame(AVPacket *packet) {
 
   int ret = avcodec_send_packet(codec_ctx_, packet);
   if (ret != 0) {
-    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-      // need handle or notify special error codes here
+    if (ret == AVERROR(EAGAIN)) {
       return nullptr;
     } else {
       throw StreamError(ret);
@@ -67,7 +66,7 @@ AVFrame *StreamVideo::GetFrame(AVPacket *packet) {
 
   ret = avcodec_receive_frame(codec_ctx_, frame_);
   if (ret != 0) {
-    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+    if (ret == AVERROR(EAGAIN)) {
       return nullptr;
     } else {
       throw StreamError(ret);

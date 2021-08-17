@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+#include <libavutil/common.h>
 #include <libavutil/pixfmt.h>
 
 #ifdef __cplusplus
@@ -53,12 +54,23 @@ struct StreamOptions {
   int sws_flags = 0;  // SWS_BICUBIC if 0
 };
 
+enum StreamErrorCode {
+  STREAM_ERROR_ANY = -0xA0000000,
+  // AVERROR
+  STREAM_ERROR_EOF = AVERROR_EOF,
+};
+
 class StreamError : public std::exception {
  public:
-  explicit StreamError(const std::string &what_arg) noexcept;
   explicit StreamError(int av_err) noexcept;
+  explicit StreamError(const std::string &what_arg) noexcept;
+  StreamError(int code, const std::string &what_arg) noexcept;
+
+  int code() const noexcept;
   const char *what() const noexcept;
+
  private:
+  int code_;
   std::string what_message_;
 };
 
