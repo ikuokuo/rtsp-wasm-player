@@ -36,7 +36,7 @@ void WsClient::Run() {
   ioc.run();
 }
 
-void WsClient::OnFail(beast::error_code ec, char const* what) {
+void WsClient::OnFail(beast::error_code ec, char const *what) {
   if (options_.on_fail) {
     options_.on_fail(ec, what);
   }
@@ -82,7 +82,7 @@ void WsClient::DoSession(
 
   // Set a decorator to change the User-Agent of the handshake
   ws.set_option(websocket::stream_base::decorator(
-      [](websocket::request_type& req) {
+      [](websocket::request_type &req) {
         req.set(http::field::user_agent,
                 std::string(BOOST_BEAST_VERSION_STRING) + " ws-client");
       }));

@@ -82,7 +82,7 @@ void WsServer::Run() {
   }
 }
 
-void WsServer::OnFail(beast::error_code ec, char const* what) {
+void WsServer::OnFail(beast::error_code ec, char const *what) {
   if (options_.on_fail) {
     options_.on_fail(ec, what);
   }

@@ -33,7 +33,7 @@ int main(int argc, char const *argv[]) {
     return EXIT_FAILURE;
   }
 
-  options.on_fail = [](boost::beast::error_code ec, char const* what) {
+  options.on_fail = [](boost::beast::error_code ec, char const *what) {
     LOG(ERROR) << what << ": " << ec.message();
   };
 

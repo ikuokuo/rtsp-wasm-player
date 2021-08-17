@@ -26,7 +26,7 @@ struct WsServerOptions {
   bool thread_exit_block = true;
 
   using on_fail_t =
-      std::function<void(boost::beast::error_code ec, char const* what)>;
+      std::function<void(boost::beast::error_code ec, char const *what)>;
   using on_stop_t = std::function<void()>;
   using on_exit_t = std::function<void()>;
 
@@ -43,7 +43,7 @@ class WsServer {
   void Run();
 
  private:
-  void OnFail(boost::beast::error_code ec, char const* what);
+  void OnFail(boost::beast::error_code ec, char const *what);
 
   void DoListen(
       boost::asio::io_context &ioc,
@@ -51,7 +51,7 @@ class WsServer {
       boost::asio::yield_context yield);
 
   void DoSessionHTTP(
-      boost::beast::tcp_stream& stream,
+      boost::beast::tcp_stream &stream,
       boost::asio::yield_context yield);
 
   void DoSessionWebSocket(

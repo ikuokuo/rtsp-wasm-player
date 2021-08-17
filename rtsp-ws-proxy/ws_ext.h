@@ -22,7 +22,7 @@ namespace websocket = beast::websocket;
 using tcp = boost::asio::ip::tcp;
 
 // Report a failure
-void fail(beast::error_code ec, char const* what);
+void fail(beast::error_code ec, char const *what);
 
 // Return a reasonable mime type based on the extension of a file.
 beast::string_view mime_type(beast::string_view path);
@@ -137,15 +137,15 @@ void handle_request(
 // This is the C++11 equivalent of a generic lambda.
 // The function object is used to send an HTTP message.
 struct send_lambda {
-  beast::tcp_stream& stream_;
-  bool& close_;
-  beast::error_code& ec_;
+  beast::tcp_stream &stream_;
+  bool &close_;
+  beast::error_code &ec_;
   asio::yield_context yield_;
 
   send_lambda(
-      beast::tcp_stream& stream,
-      bool& close,
-      beast::error_code& ec,
+      beast::tcp_stream &stream,
+      bool &close,
+      beast::error_code &ec,
       asio::yield_context yield)
     : stream_(stream),
       close_(close),
@@ -154,7 +154,7 @@ struct send_lambda {
   }
 
   template <bool isRequest, class Body, class Fields>
-  void operator()(http::message<isRequest, Body, Fields>&& msg) const {
+  void operator()(http::message<isRequest, Body, Fields> &&msg) const {
     // Determine if we should close the connection after
     close_ = msg.need_eof();
 

@@ -10,7 +10,7 @@ struct WsClientOptions {
   int port = 8080;
 
   using on_fail_t =
-      std::function<void(boost::beast::error_code ec, char const* what)>;
+      std::function<void(boost::beast::error_code ec, char const *what)>;
   on_fail_t on_fail = nullptr;
 };
 
@@ -22,7 +22,7 @@ class WsClient {
   void Run();
 
  private:
-  void OnFail(boost::beast::error_code ec, char const* what);
+  void OnFail(boost::beast::error_code ec, char const *what);
 
   void DoSession(
       boost::asio::io_context &ioc,  // NOLINT
