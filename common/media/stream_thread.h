@@ -16,6 +16,7 @@ enum StreamEventId {
   STREAM_EVENT_GET_FRAME,
   STREAM_EVENT_CLOSE,
   STREAM_EVENT_CLOSED,
+  STREAM_EVENT_LOOP,
   STREAM_EVENT_ERROR,
 };
 
@@ -58,20 +59,25 @@ class StreamFrameEvent : public StreamEvent {
   AVFrame *frame;
 };
 
-class StreamThread {
+class StreamThread : public std::enable_shared_from_this<StreamThread> {
  public:
-  using event_callback_t = std::function<void(std::shared_ptr<StreamEvent> e)>;
+  using event_callback_t =
+      std::function<void(const std::shared_ptr<StreamEvent> &e)>;
+  using running_callback_t =
+      std::function<void(const std::shared_ptr<StreamThread> &t,
+                         const std::shared_ptr<Stream> &s)>;
 
-  StreamThread(std::initializer_list<AVMediaType> types = {AVMEDIA_TYPE_VIDEO});
+  StreamThread(std::initializer_list<AVMediaType> types = {AVMEDIA_TYPE_VIDEO},
+               bool loop_on_eof = true);
   ~StreamThread();
 
   bool IsRunning() const;
-  void Start(const StreamOptions &options, int frequency = 20);
-  void SetEventCallback(event_callback_t cb);
-  void Stop();
 
- private:
-  void Run();
+  void SetEventCallback(event_callback_t cb);
+  void SetRunningCallback(running_callback_t cb);
+
+  void Start(const StreamOptions &options, int frequency = 20);
+  void Stop();
 
   void DispatchEvent(std::shared_ptr<StreamEvent> e);
 
@@ -80,11 +86,16 @@ class StreamThread {
     DispatchEvent(std::make_shared<E>(std::forward<Args>(args)...));
   }
 
+ private:
+  void Run();
+
   std::vector<AVMediaType> get_types_;
+  bool loop_on_eof_;
 
   StreamOptions options_;
   int frequency_;
   event_callback_t event_cb_;
+  running_callback_t running_cb_;
 
   std::atomic_bool is_running_;
   std::thread thread_;

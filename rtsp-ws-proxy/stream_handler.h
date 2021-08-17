@@ -32,8 +32,9 @@ class StreamHandler {
   void Stop();
 
  private:
-  void OnEvent(std::shared_ptr<StreamEvent> e);
-  void OnEventPacket(std::shared_ptr<StreamPacketEvent> e);
+  void OnEvent(const std::shared_ptr<StreamEvent> &e);
+  void OnRunning(const std::shared_ptr<StreamThread> &t,
+                 const std::shared_ptr<Stream> &s);
 
   std::string id_;
   StreamOptions options_;

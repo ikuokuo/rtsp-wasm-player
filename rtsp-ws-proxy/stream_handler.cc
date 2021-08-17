@@ -33,6 +33,9 @@ void StreamHandler::Start() {
   stream_ = std::make_shared<StreamThread>(get_types);
   stream_->SetEventCallback(
       std::bind(&StreamHandler::OnEvent, this, std::placeholders::_1));
+  stream_->SetRunningCallback(
+      std::bind(&StreamHandler::OnRunning, this,
+      std::placeholders::_1, std::placeholders::_2));
   stream_->Start(options_, get_frequency_);
 }
 
@@ -48,13 +51,8 @@ void StreamHandler::Stop() {
   }
 }
 
-void StreamHandler::OnEvent(std::shared_ptr<StreamEvent> e) {
-  if (e->id == STREAM_EVENT_GET_PACKET) {
-    OnEventPacket(std::dynamic_pointer_cast<StreamPacketEvent>(e));
-  } else if (e->id == STREAM_EVENT_ERROR) {
-    auto event = std::dynamic_pointer_cast<StreamErrorEvent>(e);
-    LOG(ERROR) << "Stream[" << id_ << "] " << event->error.what();
-  } else if (e->id == STREAM_EVENT_OPEN) {
+void StreamHandler::OnEvent(const std::shared_ptr<StreamEvent> &e) {
+  if (e->id == STREAM_EVENT_OPEN) {
     LOG(INFO) << "Stream[" << id_ << "] open ...";
   } else if (e->id == STREAM_EVENT_OPENED) {
     LOG(INFO) << "Stream[" << id_ << "] open success";
@@ -62,14 +60,21 @@ void StreamHandler::OnEvent(std::shared_ptr<StreamEvent> e) {
   //   LOG(INFO) << "Stream[" << id_ << "] close ...";
   } else if (e->id == STREAM_EVENT_CLOSED) {
     LOG(INFO) << "Stream[" << id_ << "] close success";
+  } else if (e->id == STREAM_EVENT_LOOP) {
+    LOG(WARNING) << "Stream[" << id_ << "] loop ...";
+  } else if (e->id == STREAM_EVENT_ERROR) {
+    auto event = std::dynamic_pointer_cast<StreamErrorEvent>(e);
+    LOG(ERROR) << "Stream[" << id_ << "] " << event->error.what();
   }
 }
 
-void StreamHandler::OnEventPacket(std::shared_ptr<StreamPacketEvent> e) {
-  auto packet = e->packet;
+void StreamHandler::OnRunning(const std::shared_ptr<StreamThread> &t,
+                              const std::shared_ptr<Stream> &stream) {
+  (void)t;
+
+  auto packet = stream->GetPacket(false);
   if (packet == nullptr) return;
 
-  auto stream = e->stream;
   auto stream_video = stream->GetStreamSub(AVMEDIA_TYPE_VIDEO);
   if (stream_video->GetIndex() != packet->stream_index) {
     return;
@@ -116,6 +121,7 @@ void StreamHandler::OnEventPacket(std::shared_ptr<StreamPacketEvent> e) {
       throw StreamError(ret);
     }
   }
+  stream->UnrefPacket();
 
   ret = av_bsf_receive_packet(bsf_ctx_, bsf_packet_);
   if (ret != 0) {

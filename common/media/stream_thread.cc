@@ -3,8 +3,11 @@
 #include "stream.h"
 #include "common/util/rate.h"
 
-StreamThread::StreamThread(std::initializer_list<AVMediaType> types)
-  : get_types_(types), frequency_(20), event_cb_(nullptr), is_running_(false) {
+StreamThread::StreamThread(std::initializer_list<AVMediaType> types,
+    bool loop_on_eof)
+  : get_types_(types), loop_on_eof_(loop_on_eof),
+    frequency_(20), event_cb_(nullptr), running_cb_(nullptr),
+    is_running_(false) {
 }
 
 StreamThread::~StreamThread() {
@@ -13,6 +16,14 @@ StreamThread::~StreamThread() {
 
 bool StreamThread::IsRunning() const {
   return is_running_;
+}
+
+void StreamThread::SetEventCallback(event_callback_t cb) {
+  event_cb_ = cb;
+}
+
+void StreamThread::SetRunningCallback(running_callback_t cb) {
+  running_cb_ = cb;
 }
 
 void StreamThread::Start(const StreamOptions &options, int frequency) {
@@ -24,10 +35,6 @@ void StreamThread::Start(const StreamOptions &options, int frequency) {
   thread_ = std::thread(&StreamThread::Run, this);
 }
 
-void StreamThread::SetEventCallback(event_callback_t cb) {
-  event_cb_ = cb;
-}
-
 void StreamThread::Stop() {
   if (!is_running_) return;
   is_running_ = false;
@@ -37,6 +44,7 @@ void StreamThread::Stop() {
 }
 
 void StreamThread::Run() {
+  bool loop = false;
   try {
     auto stream = std::make_shared<Stream>();
 
@@ -46,20 +54,23 @@ void StreamThread::Run() {
 
     Rate rate(frequency_);
     while (is_running_) {
+      if (running_cb_) {
+        running_cb_(shared_from_this(), stream);
+        rate.Sleep();
+        continue;
+      }
+
       auto packet = stream->GetPacket(false);
       DispatchEvent<StreamPacketEvent>(stream, packet);
 
       for (auto &&type : get_types_) {
         auto frame = stream->GetFrame(type, packet, false);
-        if (frame == nullptr) {
-          // could handle more events, such as EOF
-        } else {
+        if (frame != nullptr) {
           DispatchEvent<StreamFrameEvent>(stream, type, frame);
         }
       }
 
       stream->UnrefPacket();
-
       rate.Sleep();
     }
 
@@ -67,8 +78,15 @@ void StreamThread::Run() {
     stream->Close();
     DispatchEvent<StreamEvent>(STREAM_EVENT_CLOSED, stream);
   } catch (const StreamError &err) {
-    DispatchEvent<StreamErrorEvent>(nullptr, err);
+    if (loop_on_eof_ && err.code() == STREAM_ERROR_EOF) {
+      DispatchEvent<StreamEvent>(STREAM_EVENT_LOOP, nullptr);
+      loop = true;
+    } else {
+      DispatchEvent<StreamErrorEvent>(nullptr, err);
+    }
   }
+
+  if (loop) Run();
 }
 
 void StreamThread::DispatchEvent(std::shared_ptr<StreamEvent> e) {

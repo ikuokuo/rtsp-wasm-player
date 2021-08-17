@@ -56,7 +56,7 @@ int main(int argc, char const *argv[]) {
 
   stream.SetEventCallback([
     &ui, &frame_first_got, &frame_first, &mutex_frame_first, &cond_frame_first
-  ](std::shared_ptr<StreamEvent> e) {
+  ](const std::shared_ptr<StreamEvent> &e) {
     if (e->id == STREAM_EVENT_GET_FRAME) {
       auto event = std::dynamic_pointer_cast<StreamFrameEvent>(e);
       auto frame = event->frame;
@@ -71,6 +71,10 @@ int main(int argc, char const *argv[]) {
         frame_first = frame;
         cond_frame_first.notify_one();
       }
+    } else if (e->id == STREAM_EVENT_LOOP) {
+      LOG(WARNING) << "Stream loop ...";
+      // frame is invalid, wait update
+      ui.Update(nullptr);
     } else if (e->id == STREAM_EVENT_ERROR) {
       auto event = std::dynamic_pointer_cast<StreamErrorEvent>(e);
       LOG(ERROR) << event->error.what();
