@@ -21,7 +21,7 @@ extern "C" {
 
 #include "common/util/options.h"
 #include "stream_handler.h"
-#include "ws_server.h"
+#include "ws_stream_server.h"
 
 int main(int argc, char const *argv[]) {
   (void)argc;
@@ -85,20 +85,20 @@ int main(int argc, char const *argv[]) {
     return EXIT_FAILURE;
   }
 
+  WsStreamServer server(options);
+
   std::vector<std::shared_ptr<StreamHandler>> streams;
   for (auto &&entry : stream_options) {
     auto id = entry.first;
     auto stream = std::make_shared<StreamHandler>(
       id, entry.second, stream_get_frequency,
-      [id](Stream::stream_sub_t stream, AVPacket *packet) {
-        (void)stream;
-        LOG(INFO) << "Stream[" << id << "] packet size=" << packet->size;
+      [id, &server](Stream::stream_sub_t stream, AVPacket *packet) {
+        server.Push(id, stream, packet);
       });
     stream->Start();
     streams.push_back(stream);
   }
 
-  WsServer server(options);
   server.Run();
 
   for (auto &&s : streams)

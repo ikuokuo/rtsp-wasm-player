@@ -106,6 +106,7 @@ add_executable(rtsp-ws-proxy
   main.cc
   ws_ext.cc
   ws_server.cc
+  ws_stream_server.cc
   stream_handler.cc
 )
 target_link_libraries(rtsp-ws-proxy
