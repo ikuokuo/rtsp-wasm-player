@@ -37,14 +37,31 @@ struct WsServerOptions {
 
 class WsServer {
  public:
+  using http_req_t = boost::beast::http::request<
+      boost::beast::http::string_body,
+      boost::beast::http::basic_fields<std::allocator<char>>>;
+
   explicit WsServer(const WsServerOptions &options);
-  ~WsServer();
+  virtual ~WsServer();
 
   void Run();
 
- private:
-  void OnFail(boost::beast::error_code ec, char const *what);
+ protected:
+  virtual void OnFail(boost::beast::error_code ec, char const *what);
 
+  virtual bool OnHandleHttpRequest(
+      http_req_t &req,
+      ws_ext::send_lambda &send);
+
+  virtual bool OnHandleWebSocket(
+      boost::beast::websocket::stream<boost::beast::tcp_stream> &ws,
+      boost::optional<http_req_t> &req,
+      boost::beast::error_code &ec,
+      boost::asio::yield_context yield);
+
+  WsServerOptions options_;
+
+ private:
   void DoListen(
       boost::asio::io_context &ioc,
       boost::asio::ip::tcp::endpoint endpoint,
@@ -56,64 +73,6 @@ class WsServer {
 
   void DoSessionWebSocket(
       boost::beast::websocket::stream<boost::beast::tcp_stream> &ws,
+      boost::optional<http_req_t> &req,
       boost::asio::yield_context yield);
-
-  template <class Body, class Allocator>
-  void DoSessionWebSocketX(
-      boost::beast::websocket::stream<boost::beast::tcp_stream> &ws,
-      boost::optional<boost::beast::http::request<
-          Body, boost::beast::http::basic_fields<Allocator>>> req,
-      boost::asio::yield_context yield);
-
-  WsServerOptions options_;
 };
-
-template <class Body, class Allocator>
-void WsServer::DoSessionWebSocketX(
-    boost::beast::websocket::stream<boost::beast::tcp_stream> &ws,
-    boost::optional<boost::beast::http::request<
-        Body, boost::beast::http::basic_fields<Allocator>>> req,
-    boost::asio::yield_context yield) {
-  namespace beast = boost::beast;
-  namespace http = boost::beast::http;
-  namespace websocket = boost::beast::websocket;
-
-  beast::error_code ec;
-
-  // Set suggested timeout settings for the websocket
-  ws.set_option(
-      websocket::stream_base::timeout::suggested(beast::role_type::server));
-
-  // Set a decorator to change the Server of the handshake
-  ws.set_option(websocket::stream_base::decorator(
-      [](websocket::response_type &res) {
-        res.set(http::field::server,
-                std::string(BOOST_BEAST_VERSION_STRING) + " ws-server");
-      }));
-
-  // Accept the websocket handshake
-  if (req.has_value()) {
-    ws.async_accept(req.get(), yield[ec]);
-  } else {
-    ws.async_accept(yield[ec]);
-  }
-  if (ec) return OnFail(ec, "accept");
-
-  for (;;) {
-    // This buffer will hold the incoming message
-    beast::flat_buffer buffer;
-
-    // Read a message
-    ws.async_read(buffer, yield[ec]);
-
-    // This indicates that the session was closed
-    if (ec == websocket::error::closed) break;
-
-    if (ec) return OnFail(ec, "read");
-
-    // Echo the message back
-    ws.text(ws.got_text());
-    ws.async_write(buffer.data(), yield[ec]);
-    if (ec) return OnFail(ec, "write");
-  }
-}
