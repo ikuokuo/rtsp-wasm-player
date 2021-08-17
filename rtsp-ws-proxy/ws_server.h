@@ -16,7 +16,9 @@ struct WsServerOptions {
   int threads       = 3;
 
   bool http_enable          = true;
-  // Notice: "", "/", "//" will access the fiesystem root
+  // Notice
+  //  "": deny access the filesystem
+  //  "/", "//": will access the filesystem root
   std::string http_doc_root = ".";
 
   bool signal_exit_enable = true;

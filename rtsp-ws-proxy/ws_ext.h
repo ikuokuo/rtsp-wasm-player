@@ -87,6 +87,10 @@ void handle_request(
       req.target().find("..") != beast::string_view::npos)
     return send(bad_request("Illegal request-target"));
 
+  // Make sure doc_root not empty
+  if (doc_root.empty())
+    return send(bad_request("Deny access filesystem"));
+
   // Build the path to the requested file
   std::string path = path_cat(doc_root, req.target());
   if (req.target().back() == '/')
