@@ -3,7 +3,6 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <utility>
 
 #include "ws_server.h"
 #include "common/media/stream.h"
@@ -12,11 +11,11 @@
 class WsStreamServer : public WsServer {
  public:
   struct Data {
+    AVMediaType type;
     AVPacket *packet;
-    Stream::stream_sub_t stream;
 
-    Data(AVPacket *p, Stream::stream_sub_t s)
-      : packet(av_packet_clone(p)), stream(std::move(s)) {
+    Data(AVMediaType type, AVPacket *p)
+      : type(type), packet(av_packet_clone(p)) {
     }
     ~Data() {
       av_packet_free(&packet);
@@ -28,8 +27,9 @@ class WsStreamServer : public WsServer {
   explicit WsStreamServer(const WsServerOptions &options);
   ~WsStreamServer() override;
 
-  void Push(const std::string &id,
-            const Stream::stream_sub_t &stream,
+  void Send(const std::string &id,
+            const std::shared_ptr<Stream> &stream,
+            const AVMediaType &type,
             AVPacket *packet);
 
  protected:
@@ -43,5 +43,13 @@ class WsStreamServer : public WsServer {
       boost::beast::error_code &ec,
       boost::asio::yield_context yield) override;
 
+  bool SendData(
+      boost::beast::websocket::stream<boost::beast::tcp_stream> &ws,
+      const std::string &id,
+      const std::shared_ptr<Data> &data,
+      boost::beast::error_code &ec,
+      boost::asio::yield_context yield);
+
+  std::unordered_map<std::string, std::shared_ptr<Stream>> stream_map_;
   std::unordered_map<std::string, std::shared_ptr<data_queue_t>> datas_map_;
 };

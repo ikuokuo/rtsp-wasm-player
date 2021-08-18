@@ -92,8 +92,9 @@ int main(int argc, char const *argv[]) {
     auto id = entry.first;
     auto stream = std::make_shared<StreamHandler>(
       id, entry.second, stream_get_frequency,
-      [id, &server](Stream::stream_sub_t stream, AVPacket *packet) {
-        server.Push(id, stream, packet);
+      [id, &server](const std::shared_ptr<Stream> &stream,
+                    const AVMediaType &type, AVPacket *packet) {
+        server.Send(id, stream, type, packet);
       });
     stream->Start();
     streams.push_back(stream);

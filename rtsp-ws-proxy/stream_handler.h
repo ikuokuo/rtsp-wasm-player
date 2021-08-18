@@ -19,8 +19,8 @@ struct AVPacket;
 
 class StreamHandler {
  public:
-  using packet_callback_t =
-      std::function<void(Stream::stream_sub_t, AVPacket *)>;
+  using packet_callback_t = std::function<void(
+      const std::shared_ptr<Stream> &, const AVMediaType &, AVPacket *)>;
 
   StreamHandler(const std::string &id,
                 const StreamOptions &options,

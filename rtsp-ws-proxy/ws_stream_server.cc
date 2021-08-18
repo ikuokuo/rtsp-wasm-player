@@ -1,6 +1,22 @@
 #include "ws_stream_server.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <libavformat/avformat.h>
+
+#ifdef __cplusplus
+}
+#endif
+
 #include <glog/logging.h>
+
+#include <algorithm>
+#include <utility>
+#include <vector>
+
+#include "common/ws/data.h"
 
 namespace asio = boost::asio;
 namespace beast = boost::beast;
@@ -15,16 +31,21 @@ WsStreamServer::WsStreamServer(const WsServerOptions &options)
 WsStreamServer::~WsStreamServer() {
 }
 
-void WsStreamServer::Push(
+void WsStreamServer::Send(
     const std::string &id,
-    const Stream::stream_sub_t &stream,
+    const std::shared_ptr<Stream> &stream,
+    const AVMediaType &type,
     AVPacket *packet) {
   (void)stream;
-  if (datas_map_.find(id) == datas_map_.end()) {
+  if (stream_map_.find(id) == stream_map_.end()) {
+    stream_map_.emplace(id, stream);
     datas_map_.emplace(id, std::make_shared<data_queue_t>(1));
     LOG(INFO) << "stream start, id=" << id;
+  } else {
+    // need update if stream loop
+    stream_map_[id] = stream;
   }
-  datas_map_[id]->Put(std::make_shared<Data>(packet, stream));
+  datas_map_[id]->Put(std::make_shared<Data>(type, packet));
 }
 
 bool WsStreamServer::OnHandleHttpRequest(
@@ -33,7 +54,43 @@ bool WsStreamServer::OnHandleHttpRequest(
   (void)send;
 
   auto target = req.target();
-  LOG(INFO) << "http req: " << target;
+  if (target.starts_with("/streams")) {
+    LOG(INFO) << "http req: " << target;
+    /*{
+      streams: [{
+        "id": "a",
+        "video": {
+          "codecpar": ...
+        }
+      }, ...]
+    }*/
+    http::string_body::value_type body;
+    body.append("{\"streams\": [");
+    for (auto &&entry : stream_map_) {
+      auto id = entry.first;
+      body.append("{\"id\": \"");
+      body.append(id);
+      body.append("\", ");
+      // video
+      auto stream = entry.second;
+      auto stream_av = stream->GetStreamSub(AVMEDIA_TYPE_VIDEO)->stream();
+      body.append("\"video\": {");
+      body.append("\"codecpar\": ");
+      body.append(to_string(stream_av->codecpar));
+      body.append("}}, ");
+    }
+    body.append("]}");
+
+    http::response<http::string_body> res{
+        http::status::ok, req.version()};
+    res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+    res.set(http::field::content_type, "application/json");
+    res.keep_alive(req.keep_alive());
+    res.body() = body;
+    res.prepare_payload();
+    send(std::move(res));
+    return true;
+  }
 
   return false;
 }
@@ -63,36 +120,48 @@ bool WsStreamServer::OnHandleWebSocket(
   }
 
   auto &&data_queue = datas_map_[stream_id];
-
+  bool ws_ok;
   for (;;) {
-    auto datas = data_queue->TakeAll();
-
-    for (auto &&data : datas) {
-      LOG(INFO) << "Stream[" << stream_id << "] packet size="
-          << data->packet->size;
+    ws_ok = true;
+    for (auto &&data : data_queue->TakeAll()) {
+      if (!SendData(ws, stream_id, data, ec, yield)) {
+        ws_ok = false;
+        break;
+      }
     }
+    if (!ws_ok) break;
+  }
 
-    // This buffer will hold the incoming message
-    beast::flat_buffer buffer;
+  return true;
+}
 
-    // Read a message
-    ws.async_read(buffer, yield[ec]);
+bool WsStreamServer::SendData(
+    boost::beast::websocket::stream<boost::beast::tcp_stream> &ws,
+    const std::string &id,
+    const std::shared_ptr<Data> &data,
+    boost::beast::error_code &ec,
+    boost::asio::yield_context yield) {
+  VLOG(1) << "Stream[" << id << "] packet size=" << data->packet->size;
 
-    // This indicates that the session was closed
-    if (ec == websocket::error::closed) break;
+  // type size data, ...
+  // 1    4    -
+  auto data_n = data->packet->size;
+  auto bytes = std::vector<char>(5 + data_n);
+  auto buffer = bytes.data();
+  *(buffer) = static_cast<char>(AVMEDIA_TYPE_VIDEO);
+  *(buffer+1) = static_cast<char>((data_n >> 24) & 0xff);
+  *(buffer+2) = static_cast<char>((data_n >> 16) & 0xff);
+  *(buffer+3) = static_cast<char>((data_n >> 8) & 0xff);
+  *(buffer+4) = static_cast<char>((data_n) & 0xff);
+  std::copy(data->packet->data, data->packet->data + data_n, buffer + 5);
 
-    if (ec) {
-      OnFail(ec, "read");
-      break;
-    }
+  ws.binary(true);
+  ws.async_write(asio::buffer(bytes), yield[ec]);
 
-    // Echo the message back
-    ws.text(ws.got_text());
-    ws.async_write(buffer.data(), yield[ec]);
-    if (ec) {
-      OnFail(ec, "write");
-      break;
-    }
+  if (ec == websocket::error::closed) return false;
+  if (ec) {
+    OnFail(ec, "write");
+    return false;
   }
 
   return true;

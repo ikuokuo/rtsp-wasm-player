@@ -75,7 +75,8 @@ void StreamHandler::OnRunning(const std::shared_ptr<StreamThread> &t,
   auto packet = stream->GetPacket(false);
   if (packet == nullptr) return;
 
-  auto stream_video = stream->GetStreamSub(AVMEDIA_TYPE_VIDEO);
+  auto type = AVMEDIA_TYPE_VIDEO;
+  auto stream_video = stream->GetStreamSub(type);
   if (stream_video->GetIndex() != packet->stream_index) {
     return;
   }
@@ -134,7 +135,7 @@ void StreamHandler::OnRunning(const std::shared_ptr<StreamThread> &t,
   }
 
   if (packet_cb_) {
-    packet_cb_(stream_video, bsf_packet_);
+    packet_cb_(stream, type, bsf_packet_);
   }
 
   av_packet_unref(bsf_packet_);
