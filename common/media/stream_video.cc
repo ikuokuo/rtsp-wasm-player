@@ -17,35 +17,36 @@ extern "C" {
 
 #include "common/util/throw_error.h"
 
-StreamVideo::StreamVideo(const StreamVideoOptions &options, AVStream *stream)
-  : StreamSub(stream), options_(options), codec_ctx_(nullptr), frame_(nullptr),
+StreamVideoOp::StreamVideoOp(
+    const StreamVideoOptions &options,
+    const std::shared_ptr<StreamOpContext> &context)
+  : options_(options), op_ctx_(context), codec_ctx_(nullptr), frame_(nullptr),
     sws_ctx_(nullptr), sws_frame_(nullptr) {
 }
 
-StreamVideo::~StreamVideo() {
+StreamVideoOp::~StreamVideoOp() {
   Free();
 }
 
-AVFrame *StreamVideo::GetFrame(AVPacket *packet) {
+AVFrame *StreamVideoOp::GetFrame(AVPacket *packet) {
   assert(packet != nullptr);
 
   // decode
 
   if (codec_ctx_ == nullptr) {
-    AVCodec *codec_ = avcodec_find_decoder(stream_->codecpar->codec_id);
+    AVCodec *codec_ = avcodec_find_decoder(op_ctx_->GetAVCodecID());
     if (codec_ == nullptr) {
       throw_error<StreamError>() << "Decoder not found, id="
-        << stream_->codecpar->codec_id;
+          << op_ctx_->GetAVCodecID();
     }
 
     codec_ctx_ = avcodec_alloc_context3(codec_);
     if (codec_ctx_ == nullptr)
       throw StreamError("Codec alloc context fail");
 
-    int ret = avcodec_parameters_to_context(codec_ctx_, stream_->codecpar);
-    if (ret < 0) throw StreamError(ret);
+    op_ctx_->InitAVCodecContext(codec_ctx_);
 
-    ret = avcodec_open2(codec_ctx_, codec_, nullptr);
+    int ret = avcodec_open2(codec_ctx_, codec_, nullptr);
     if (ret != 0) throw StreamError(ret);
 
     frame_ = av_frame_alloc();
@@ -112,13 +113,13 @@ AVFrame *StreamVideo::GetFrame(AVPacket *packet) {
   return result;
 }
 
-void StreamVideo::Flush() {
+void StreamVideoOp::Flush() {
   if (codec_ctx_) {
     avcodec_flush_buffers(codec_ctx_);
   }
 }
 
-void StreamVideo::Free() {
+void StreamVideoOp::Free() {
   if (sws_frame_) {
     av_frame_free(&sws_frame_);
     sws_frame_ = nullptr;
@@ -136,4 +137,20 @@ void StreamVideo::Free() {
     avcodec_free_context(&codec_ctx_);
     codec_ctx_ = nullptr;
   }
+}
+
+StreamVideoOpContext::StreamVideoOpContext(AVStream *stream)
+  : stream_(stream) {
+}
+
+StreamVideoOpContext::~StreamVideoOpContext() {
+}
+
+AVCodecID StreamVideoOpContext::GetAVCodecID() {
+  return stream_->codecpar->codec_id;
+}
+
+void StreamVideoOpContext::InitAVCodecContext(AVCodecContext *codec_ctx) {
+  int ret = avcodec_parameters_to_context(codec_ctx, stream_->codecpar);
+  if (ret < 0) throw StreamError(ret);
 }

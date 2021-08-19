@@ -69,21 +69,21 @@ void StreamHandler::OnEvent(const std::shared_ptr<StreamEvent> &e) {
 }
 
 void StreamHandler::OnRunning(const std::shared_ptr<StreamThread> &t,
-                              const std::shared_ptr<Stream> &stream) {
+                              const std::shared_ptr<Stream> &s) {
   (void)t;
 
-  auto packet = stream->GetPacket(false);
+  auto packet = s->GetPacket(false);
   if (packet == nullptr) return;
 
   auto type = AVMEDIA_TYPE_VIDEO;
-  auto stream_video = stream->GetStreamSub(type);
-  if (stream_video->GetIndex() != packet->stream_index) {
+  auto sub = s->GetStreamSub(type);
+  if (sub.stream->index != packet->stream_index) {
     return;
   }
 
   if (bsf_ctx_ == nullptr) {
-    auto stream_av = stream_video->stream();
-    auto codec_id = stream_av->codecpar->codec_id;
+    auto stream = sub.stream;
+    auto codec_id = stream->codecpar->codec_id;
 
     // ./configure --list-bsfs , ffmpeg -hide_banner -bsfs
     std::string bsf_name;
@@ -103,7 +103,7 @@ void StreamHandler::OnRunning(const std::shared_ptr<StreamThread> &t,
     int ret = av_bsf_alloc(bsf, &bsf_ctx_);
     if (ret < 0) throw StreamError(ret);
 
-    ret = avcodec_parameters_copy(bsf_ctx_->par_in, stream_av->codecpar);
+    ret = avcodec_parameters_copy(bsf_ctx_->par_in, stream->codecpar);
     if (ret < 0) throw StreamError(ret);
 
     ret = av_bsf_init(bsf_ctx_);
@@ -122,7 +122,7 @@ void StreamHandler::OnRunning(const std::shared_ptr<StreamThread> &t,
       throw StreamError(ret);
     }
   }
-  stream->UnrefPacket();
+  s->UnrefPacket();
 
   ret = av_bsf_receive_packet(bsf_ctx_, bsf_packet_);
   if (ret != 0) {
@@ -135,7 +135,7 @@ void StreamHandler::OnRunning(const std::shared_ptr<StreamThread> &t,
   }
 
   if (packet_cb_) {
-    packet_cb_(stream, type, bsf_packet_);
+    packet_cb_(s, type, bsf_packet_);
   }
 
   av_packet_unref(bsf_packet_);

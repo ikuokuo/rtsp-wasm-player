@@ -72,11 +72,10 @@ bool WsStreamServer::OnHandleHttpRequest(
       body.append(id);
       body.append("\", ");
       // video
-      auto stream = entry.second;
-      auto stream_av = stream->GetStreamSub(AVMEDIA_TYPE_VIDEO)->stream();
+      auto stream = entry.second->GetStreamSub(AVMEDIA_TYPE_VIDEO).stream;
       body.append("\"video\": {");
       body.append("\"codecpar\": ");
-      body.append(to_string(stream_av->codecpar));
+      body.append(to_string(stream->codecpar));
       body.append("}}, ");
     }
     body.append("]}");

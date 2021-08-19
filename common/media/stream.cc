@@ -15,11 +15,6 @@ extern "C" {
 #include "common/util/throw_error.h"
 #include "stream_video.h"
 
-// StreamSub
-
-AVStream *StreamSub::stream() const { return stream_; }
-int StreamSub::GetIndex() const { return stream_->index; }
-
 // Stream
 
 Stream::Stream() noexcept
@@ -114,15 +109,17 @@ void Stream::Open(const StreamOptions &options) {
       // stream of the type already set, only keep the first one
       continue;
     }
-    std::shared_ptr<StreamSub> stream_sub = nullptr;
     if (codec_type == AVMEDIA_TYPE_VIDEO) {
-      stream_sub = std::make_shared<StreamVideo>(options.video,
-        format_ctx_->streams[i]);
+      stream_subs_[codec_type] = {
+        format_ctx_->streams[i],
+        std::make_shared<StreamVideoOp>(
+            options.video,
+            std::make_shared<StreamVideoOpContext>(format_ctx_->streams[i]))
+      };
     } else {
       // stream of the type need support later, such as AVMEDIA_TYPE_AUDIO
       continue;
     }
-    stream_subs_[codec_type] = stream_sub;
   }
 
   is_open_ = true;
@@ -143,10 +140,10 @@ AVFrame *Stream::GetFrame(AVMediaType type, AVPacket *packet, bool unref) {
   if (packet == nullptr) {
     packet = GetPacket(false);
   }
-  auto stream = GetStreamSub(type);
+  auto sub = GetStreamSub(type);
   AVFrame *frame = nullptr;
-  if (packet->stream_index == stream->GetIndex()) {
-    frame = stream->GetFrame(packet);
+  if (packet->stream_index == sub.stream->index) {
+    frame = sub.op->GetFrame(packet);
   }
   if (unref) av_packet_unref(packet_);
   return frame;

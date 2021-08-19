@@ -14,12 +14,15 @@ struct SwsContext;
 }
 #endif
 
+#include <memory>
+
 #include "stream.h"
 
-class StreamVideo : public StreamSub {
+class StreamVideoOp : public StreamOp {
  public:
-  StreamVideo(const StreamVideoOptions &options, AVStream *stream);
-  virtual ~StreamVideo();
+  StreamVideoOp(const StreamVideoOptions &options,
+                const std::shared_ptr<StreamOpContext> &context);
+  ~StreamVideoOp() override;
 
   AVFrame *GetFrame(AVPacket *packet) override;
 
@@ -28,10 +31,23 @@ class StreamVideo : public StreamSub {
 
  private:
   StreamVideoOptions options_;
+  std::shared_ptr<StreamOpContext> op_ctx_;
 
   AVCodecContext *codec_ctx_;
   AVFrame *frame_;
 
   SwsContext *sws_ctx_;
   AVFrame *sws_frame_;
+};
+
+class StreamVideoOpContext : public StreamOpContext {
+ public:
+  explicit StreamVideoOpContext(AVStream *stream);
+  ~StreamVideoOpContext() override;
+
+  AVCodecID GetAVCodecID() override;
+  void InitAVCodecContext(AVCodecContext *) override;
+
+ private:
+  AVStream *stream_;
 };
