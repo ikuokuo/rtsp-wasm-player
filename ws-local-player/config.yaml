@@ -2,4 +2,9 @@ server:
   host: 127.0.0.1
   port: 8080
 
-streams: ["a", "b", "c"]
+  http:
+    target: "/streams"
+    timeout: 5
+
+  ws:
+    target_prefix: "/stream/"

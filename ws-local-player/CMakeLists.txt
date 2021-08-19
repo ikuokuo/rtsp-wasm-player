@@ -112,6 +112,8 @@ add_executable(ws-local-player
   ${MY_COMMON_MEDIA_SRCS}
   main.cc
   ws_client.cc
+  ws_stream_client.cc
+  http_client.cc
 )
 target_link_libraries(ws-local-player
   ${Boost_LIBRARIES} PkgConfig::ffmpeg glog::glog yaml-cpp ${GL_LIBS}

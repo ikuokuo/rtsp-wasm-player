@@ -42,6 +42,13 @@ void WsClient::OnFail(beast::error_code ec, char const *what) {
   }
 }
 
+bool WsClient::OnRead(beast::flat_buffer *buffer) {
+  auto buf_n = buffer->data().size();
+  LOG(INFO) << "data n=" << buf_n;
+  buffer->consume(buf_n);
+  return true;
+}
+
 // Sends a WebSocket message and prints the response
 void WsClient::DoSession(
     boost::asio::io_context &ioc,  // NOLINT
@@ -88,26 +95,24 @@ void WsClient::DoSession(
       }));
 
   // Perform the websocket handshake
-  ws.async_handshake(host, "/hello", yield[ec]);
+  ws.async_handshake(host, options_.target, yield[ec]);
   if (ec) return OnFail(ec, "handshake");
 
-  // Send the message
-  ws.async_write(asio::buffer(std::string("hello")), yield[ec]);
-  if (ec) return OnFail(ec, "write");
-
-  // This buffer will hold the incoming message
   beast::flat_buffer buffer;
+  for (;;) {
+    ws.async_read(buffer, yield[ec]);
+    if (ec == websocket::error::closed) break;
+    if (ec) {
+      OnFail(ec, "read");
+      break;
+    }
 
-  // Read a message into our buffer
-  ws.async_read(buffer, yield[ec]);
-  if (ec) return OnFail(ec, "read");
+    if (!OnRead(&buffer)) break;
+  }
 
   // Close the WebSocket connection
   ws.async_close(websocket::close_code::normal, yield[ec]);
   if (ec) return OnFail(ec, "close");
 
   // If we get here then the connection is closed gracefully
-
-  // The make_printable() function helps print a ConstBufferSequence
-  LOG(INFO) << beast::make_printable(buffer.data());
 }

@@ -121,6 +121,18 @@ WebSocket > Packets > Wasm FFmpeg decode to YUV > WebGL display
 WebSocket > Packets > FFmpeg decode to YUV > OpenGL display
 ```
 
+Build and run:
+
+```bash
+cd ws-local-player
+
+# build
+make
+
+# run
+./_output/bin/ws-local-player ./config.yaml
+```
+
 ### RTSP Local Player
 
 ```txt
