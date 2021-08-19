@@ -26,3 +26,6 @@ streams:
     pixel_format: "yuyv422"
 
 stream_get_frequency: 50
+
+# test only: multithreading glfw not coding stable now
+stream_ui_enable: false

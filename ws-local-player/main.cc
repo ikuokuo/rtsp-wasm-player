@@ -19,13 +19,14 @@ int main(int argc, char const *argv[]) {
   google::InitGoogleLogging(argv[0]);
 
   if (argc < 2) {
-    LOG(ERROR) << "Usage: <program> config.yaml";
+    LOG(ERROR) << "Usage: <program> config.yaml [stream_id]";
     return 1;
   }
 
   HttpClientOptions http_options{};
   WsClientOptions ws_options{};
   std::string ws_target_prefix = "/stream/";
+  std::string ws_target_id;
   try {
     auto node = YAML::LoadFile(argv[1]);
     LOG(INFO) << "Load config success: " << argv[1];
@@ -52,33 +53,41 @@ int main(int argc, char const *argv[]) {
         auto node_ws = node_server["ws"];
         if (node_ws["target_prefix"])
           ws_target_prefix = node_ws["target_prefix"].as<std::string>();
+        if (node_ws["target_id"])
+          ws_target_id = node_ws["target_id"].as<std::string>();
       }
     }
+
+    if (argc >= 3)
+      ws_target_id = argv[2];
   } catch (const std::exception &e) {
     LOG(ERROR) << "Load config fail, " << e.what();
     return EXIT_FAILURE;
   }
 
-  std::mutex mutex_http;
-  std::condition_variable cond_http;
+  std::mutex http_mutex;
+  std::condition_variable http_cond;
   int http_wait_secs = http_options.timeout;
   bool http_resp_ok = false;
+  bool http_fail = false;
   std::shared_ptr<ws::stream_infos_t> stream_infos = nullptr;
 
-  auto on_fail = [](boost::beast::error_code ec, char const *what) {
-    LOG(ERROR) << what << ": " << ec.message();
-  };
-
   {
-    http_options.on_fail = on_fail;
+    http_options.on_fail = [&http_mutex, &http_cond, &http_fail](
+        boost::beast::error_code ec, char const *what) {
+      LOG(ERROR) << what << ": " << ec.message();
+      std::unique_lock<std::mutex> lock(http_mutex);
+      http_fail = true;
+      http_cond.notify_one();
+    };
     LOG(INFO) << "HTTP get stream infos, http://" << http_options.host << ":"
         << http_options.port << http_options.target;
     HttpClient(http_options).Run(
-        [&mutex_http, &cond_http, &http_resp_ok, &stream_infos](
+        [&http_mutex, &http_cond, &http_resp_ok, &stream_infos](
             const HttpClient::response_t &res) {
           VLOG(1) << res;
           if (res.result() == boost::beast::http::status::ok) {
-            std::unique_lock<std::mutex> lock(mutex_http);
+            std::unique_lock<std::mutex> lock(http_mutex);
             try {
               stream_infos = std::make_shared<ws::stream_infos_t>();
               *stream_infos = ws::to_stream_infos(
@@ -87,32 +96,46 @@ int main(int argc, char const *argv[]) {
             } catch (std::exception &e) {
               LOG(ERROR) << " parse fail, " << e.what();
             }
-            cond_http.notify_one();
+            http_cond.notify_one();
           }
         });
   }
   {
-    std::unique_lock<std::mutex> lock(mutex_http);
-    cond_http.wait_for(lock,
+    std::unique_lock<std::mutex> lock(http_mutex);
+    http_cond.wait_for(lock,
         std::chrono::seconds(http_wait_secs),
-        [&http_resp_ok]() { return http_resp_ok; });
+        [&http_resp_ok, &http_fail]() { return http_resp_ok || http_fail; });
   }
   if (http_resp_ok) {
-    for (auto &&e : *stream_infos) {
-      LOG(INFO) << ws_target_prefix << e.id;
-      for (auto &&s : e.subs) {
+    int stream_info_index = -1;
+    for (int i = 0, n = stream_infos->size(); i < n; ++i) {
+      auto &&stream_info = (*stream_infos)[i];
+      if (stream_info.id == ws_target_id) {
+        stream_info_index = i;
+      }
+      LOG(INFO) << ws_target_prefix << stream_info.id;
+      for (auto &&s : stream_info.subs) {
         LOG(INFO) << " " << av_get_media_type_string(s.first);
         LOG(INFO) << "  " << ws::json(s.second);
       }
     }
 
-    auto stream_info = stream_infos->front();
+    if (stream_info_index == -1) {
+      LOG(WARNING) << "WS stream not found, id=" << ws_target_id;
+      return EXIT_SUCCESS;
+    }
+
+    auto stream_info = (*stream_infos)[stream_info_index];
 
     ws_options.target = ws_target_prefix + stream_info.id;
-    ws_options.on_fail = on_fail;
+    ws_options.on_fail = [](boost::beast::error_code ec, char const *what) {
+      LOG(ERROR) << what << ": " << ec.message();
+    };
 
-    WsStreamClient ws_client(ws_options);
+    WsStreamClient ws_client(ws_options, stream_info);
     ws_client.Run();
+  } else if (http_fail) {
+    LOG(ERROR) << "HTTP get fail";
   } else {
     LOG(ERROR) << "HTTP get stream infos timeout, > " << http_wait_secs << " s";
   }

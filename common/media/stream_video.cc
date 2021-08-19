@@ -15,6 +15,8 @@ extern "C" {
 }
 #endif
 
+#include <glog/logging.h>
+
 #include "common/util/throw_error.h"
 
 StreamVideoOp::StreamVideoOp(
@@ -97,6 +99,13 @@ AVFrame *StreamVideoOp::GetFrame(AVPacket *packet) {
 
       sws_frame_->width = width;
       sws_frame_->height = height;
+
+      VLOG(1) << "sws src, pix_fmt=" << codec_ctx_->pix_fmt
+          << ", width=" << codec_ctx_->width
+          << ", height=" << codec_ctx_->height;
+      VLOG(1) << "sws dst, pix_fmt=" << pix_fmt
+          << ", width=" << width << ", height=" << height
+          << ", align=" << align << ", flags=" << flags;
 
       sws_ctx_ = sws_getContext(
           codec_ctx_->width, codec_ctx_->height, codec_ctx_->pix_fmt,

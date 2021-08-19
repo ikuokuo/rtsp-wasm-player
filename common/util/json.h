@@ -5,6 +5,16 @@
 #include <unordered_map>
 #include <vector>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <libavcodec/avcodec.h>
+
+#ifdef __cplusplus
+}
+#endif
+
 #include <nlohmann/json.hpp>
 
 namespace ws {
@@ -41,6 +51,18 @@ struct adl_serializer<AVCodecParameters> {
       {"profile", par.profile},
       {"level", par.level},
     };
+    if (par.extradata) {
+      std::stringstream ss;
+      ss << std::hex << std::setfill('0');
+      for (int i = 0; i < par.extradata_size; ++i) {
+        ss << std::setw(2) << static_cast<int>(*(par.extradata+i));
+      }
+      j["extradata"] = ss.str();
+      j["extradata_size"] = par.extradata_size;
+    } else {
+      j["extradata"] = nullptr;
+      j["extradata_size"] = 0;
+    }
     switch (par.codec_type) {
     case AVMEDIA_TYPE_VIDEO:
       j["format"] = par.format;
@@ -84,6 +106,21 @@ struct adl_serializer<AVCodecParameters> {
     j.at("bits_per_raw_sample").get_to(par.bits_per_raw_sample);
     j.at("profile").get_to(par.profile);
     j.at("level").get_to(par.level);
+    j.at("extradata_size").get_to(par.extradata_size);
+    if (par.extradata_size > 0) {
+      std::string s;
+      j.at("extradata").get_to(s);
+      std::vector<uint8_t> bytes;
+      for (int i = 0; i < par.extradata_size; ++i) {
+        bytes.push_back(static_cast<uint8_t>(
+            std::stoi(s.substr(i*2, 2), nullptr, 16)));
+      }
+      par.extradata = reinterpret_cast<uint8_t *>(
+          av_mallocz(par.extradata_size + AV_INPUT_BUFFER_PADDING_SIZE));
+      if (!par.extradata)
+        return throw StreamError(AVERROR(ENOMEM));
+      memcpy(par.extradata, bytes.data(), par.extradata_size);
+    }
     switch (par.codec_type) {
     case AVMEDIA_TYPE_VIDEO:
       j.at("format").get_to(par.format);

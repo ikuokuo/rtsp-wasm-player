@@ -21,14 +21,13 @@ class WsClient {
   explicit WsClient(const WsClientOptions &options);
   virtual ~WsClient();
 
-  void Run();
+  virtual void Run();
 
  protected:
   virtual void OnFail(boost::beast::error_code ec, char const *what);
 
   virtual bool OnRead(boost::beast::flat_buffer *buffer);
 
- private:
   void DoSession(
       boost::asio::io_context &ioc,  // NOLINT
       boost::asio::yield_context yield);

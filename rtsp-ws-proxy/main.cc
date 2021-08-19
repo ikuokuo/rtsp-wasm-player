@@ -21,6 +21,7 @@ extern "C" {
 
 #include "common/util/options.h"
 #include "stream_handler.h"
+#include "stream_player.h"
 #include "ws_stream_server.h"
 
 int main(int argc, char const *argv[]) {
@@ -47,6 +48,7 @@ int main(int argc, char const *argv[]) {
   WsServerOptions options{};
   std::map<std::string, StreamOptions> stream_options;
   int stream_get_frequency = 20;
+  bool stream_ui_enable = false;
   try {
     auto node = YAML::LoadFile(argv[1]);
     LOG(INFO) << "Load config success: " << argv[1];
@@ -75,6 +77,9 @@ int main(int argc, char const *argv[]) {
 
     if (node["stream_get_frequency"])
       stream_get_frequency = node["stream_get_frequency"].as<int>();
+
+    if (node["stream_ui_enable"])
+      stream_ui_enable = node["stream_ui_enable"].as<bool>();
   } catch (const std::exception &e) {
     LOG(ERROR) << "Load config fail, " << e.what();
     return EXIT_FAILURE;
@@ -88,13 +93,24 @@ int main(int argc, char const *argv[]) {
   WsStreamServer server(options);
 
   std::vector<std::shared_ptr<StreamHandler>> streams;
+  std::unordered_map<std::string, std::shared_ptr<StreamPlayer>> players;
   for (auto &&entry : stream_options) {
     auto id = entry.first;
+    std::shared_ptr<StreamPlayer> player = nullptr;
+    if (stream_ui_enable) {
+      player = std::make_shared<StreamPlayer>(id);
+      player->Start();
+      players[id] = player;
+    }
     auto stream = std::make_shared<StreamHandler>(
       id, entry.second, stream_get_frequency,
-      [id, &server](const std::shared_ptr<Stream> &stream,
-                    const AVMediaType &type, AVPacket *packet) {
+      [id, &server, player](
+          const std::shared_ptr<Stream> &stream,
+          const AVMediaType &type, AVPacket *packet) {
         server.Send(id, stream, type, packet);
+        if (player != nullptr) {
+          player->Send(id, stream, type, packet);
+        }
       });
     stream->Start();
     streams.push_back(stream);
@@ -104,5 +120,7 @@ int main(int argc, char const *argv[]) {
 
   for (auto &&s : streams)
     s->Stop();
+  for (auto &&p : players)
+    p.second->Stop();
   return EXIT_SUCCESS;
 }

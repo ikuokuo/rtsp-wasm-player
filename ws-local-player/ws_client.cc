@@ -25,7 +25,7 @@ void WsClient::Run() {
   asio::io_context ioc;
 
   // Launch the asynchronous operation
-  boost::asio::spawn(ioc, std::bind(
+  asio::spawn(ioc, std::bind(
       &WsClient::DoSession,
       this,
       std::ref(ioc),
@@ -51,8 +51,8 @@ bool WsClient::OnRead(beast::flat_buffer *buffer) {
 
 // Sends a WebSocket message and prints the response
 void WsClient::DoSession(
-    boost::asio::io_context &ioc,  // NOLINT
-    boost::asio::yield_context yield) {
+    asio::io_context &ioc,  // NOLINT
+    asio::yield_context yield) {
   beast::error_code ec;
 
   // These objects perform our I/O

@@ -41,7 +41,7 @@ void WsStreamServer::Send(
   if (stream_map_.find(id) == stream_map_.end()) {
     stream_map_.emplace(id, stream);
     datas_map_.emplace(id, std::make_shared<data_queue_t>(1));
-    LOG(INFO) << "stream start, id=" << id;
+    LOG(INFO) << "Stream[" << id << "] start";
   } else {
     // need update if stream loop
     stream_map_[id] = stream;
