@@ -15,6 +15,13 @@ extern "C" {
 #include "common/util/throw_error.h"
 #include "stream_video.h"
 
+// StreamSub
+
+AVStream *StreamSub::stream() const { return stream_; }
+int StreamSub::GetIndex() const { return stream_->index; }
+
+// Stream
+
 Stream::Stream() noexcept
   : is_open_(false), format_ctx_(nullptr), packet_(nullptr) {
 }

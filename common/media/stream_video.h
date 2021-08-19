@@ -21,7 +21,6 @@ class StreamVideo : public StreamSub {
   StreamVideo(const StreamOptions &options, AVStream *stream);
   virtual ~StreamVideo();
 
-  int GetIndex() override;
   AVFrame *GetFrame(AVPacket *packet) override;
 
   void Flush();

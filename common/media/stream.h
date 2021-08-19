@@ -26,9 +26,9 @@ class StreamSub {
   explicit StreamSub(AVStream *stream) : stream_(stream) {}
   virtual ~StreamSub() = default;
 
-  AVStream *stream() const { return stream_; }
+  AVStream *stream() const;
+  int GetIndex() const;
 
-  virtual int GetIndex() = 0;
   virtual AVFrame *GetFrame(AVPacket *packet) = 0;
 
  protected:

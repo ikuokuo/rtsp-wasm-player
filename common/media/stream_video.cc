@@ -26,10 +26,6 @@ StreamVideo::~StreamVideo() {
   Free();
 }
 
-int StreamVideo::GetIndex() {
-  return stream_->index;
-}
-
 AVFrame *StreamVideo::GetFrame(AVPacket *packet) {
   assert(packet != nullptr);
 
