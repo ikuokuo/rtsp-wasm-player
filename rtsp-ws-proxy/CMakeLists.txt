@@ -85,6 +85,7 @@ msg_var(yaml-cpp_VERSION)
 include_directories(
   ${MY_ROOT}
   ${Boost_INCLUDE_DIRS}
+  ${MY_3RDPARTY}/json/single_include
 )
 
 file(GLOB MY_COMMON_MEDIA_SRCS "${MY_ROOT}/common/media/*.cc")

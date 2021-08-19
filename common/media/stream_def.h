@@ -1,12 +1,15 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <stdexcept>
+#include <unordered_map>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include <libavcodec/codec_par.h>
 #include <libavutil/common.h>
 #include <libavutil/pixfmt.h>
 
@@ -77,6 +80,18 @@ class StreamError : public std::exception {
  private:
   int code_;
   std::string what_message_;
+};
+
+struct StreamSubInfo {
+  AVCodecParameters *codecpar;
+
+  StreamSubInfo(): codecpar(avcodec_parameters_alloc()) {}
+  ~StreamSubInfo() { avcodec_parameters_free(&codecpar); }
+};
+
+struct StreamInfo {
+  std::string id;
+  std::unordered_map<AVMediaType, std::shared_ptr<StreamSubInfo>> subs;
 };
 
 // to/from string

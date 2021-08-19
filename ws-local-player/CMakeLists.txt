@@ -90,6 +90,7 @@ include_directories(
   ${MY_ROOT}
   ${Boost_INCLUDE_DIRS}
   ${GL_INCLUDE_DIRS}
+  ${MY_3RDPARTY}/json/single_include
 )
 
 file(GLOB MY_COMMON_GL_SRCS "${MY_ROOT}/common/gl/*.cc")

@@ -75,13 +75,16 @@ sudo apt install -y libglew-dev libglfw3-dev
 # glm
 git clone --depth 1 -b 0.9.9.8 https://github.com/g-truc/glm.git $MY_ROOT/3rdparty/glm
 
-# yaml-cpp: https://github.com/jbeder/yaml-cpp
+# jbeder/yaml-cpp: https://github.com/jbeder/yaml-cpp
 git clone --depth 1 -b yaml-cpp-0.7.0 https://github.com/jbeder/yaml-cpp.git $MY_ROOT/3rdparty/source/yaml-cpp
 cd $MY_ROOT/3rdparty/source/yaml-cpp
 mkdir _build; cd _build
 cmake -DCMAKE_INSTALL_PREFIX=$MY_ROOT/3rdparty/yaml-cpp-0.7.0 -DYAML_CPP_BUILD_TESTS=OFF ..
 cmake --build . --target install --config Release -- -j`nproc`
 ln -s yaml-cpp-0.7.0 $MY_ROOT/3rdparty/yaml-cpp
+
+# nlohmann/json: https://github.com/nlohmann/json
+git clone --depth 1 -b v3.10.0 https://github.com/nlohmann/json.git $MY_ROOT/3rdparty/json
 ```
 
 <!--

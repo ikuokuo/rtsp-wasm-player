@@ -16,7 +16,8 @@ extern "C" {
 #include <utility>
 #include <vector>
 
-#include "common/ws/data.h"
+#define WS_JSON_STREAM_INFO_IGNORE
+#include "common/util/json.h"
 
 namespace asio = boost::asio;
 namespace beast = boost::beast;
@@ -56,36 +57,12 @@ bool WsStreamServer::OnHandleHttpRequest(
   auto target = req.target();
   if (target.starts_with("/streams")) {
     LOG(INFO) << "http req: " << target;
-    /*{
-      streams: [{
-        "id": "a",
-        "video": {
-          "codecpar": ...
-        }
-      }, ...]
-    }*/
-    http::string_body::value_type body;
-    body.append("{\"streams\": [");
-    for (auto &&entry : stream_map_) {
-      auto id = entry.first;
-      body.append("{\"id\": \"");
-      body.append(id);
-      body.append("\", ");
-      // video
-      auto stream = entry.second->GetStreamSub(AVMEDIA_TYPE_VIDEO).stream;
-      body.append("\"video\": {");
-      body.append("\"codecpar\": ");
-      body.append(to_string(stream->codecpar));
-      body.append("}}, ");
-    }
-    body.append("]}");
-
     http::response<http::string_body> res{
         http::status::ok, req.version()};
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
     res.set(http::field::content_type, "application/json");
     res.keep_alive(req.keep_alive());
-    res.body() = body;
+    res.body() = ws::to_string(stream_map_);
     res.prepare_payload();
     send(std::move(res));
     return true;

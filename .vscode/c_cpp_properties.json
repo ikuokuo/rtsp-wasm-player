@@ -9,7 +9,8 @@
                 "${workspaceFolder}/3rdparty/glog/include",
                 "${workspaceFolder}/3rdparty/glm",
                 "${workspaceFolder}/3rdparty/yaml-cpp/include",
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/3rdparty/json/include",
+                "${workspaceFolder}/"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
