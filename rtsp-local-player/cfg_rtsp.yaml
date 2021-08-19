@@ -5,10 +5,11 @@ stream:
   method: "network"
   input_url: "rtsp://127.0.0.1:8554/test"
 
-  sws_enable: true
-  sws_dst_pix_fmt: "bgr24"
-  # with opengl
-  # sws_dst_pix_fmt: "yuyv420p"
+  video:
+    sws_enable: true
+    sws_dst_pix_fmt: "bgr24"
+    # with opengl
+    # sws_dst_pix_fmt: "yuyv420p"
 
 ui_cv:
   stream_get_frequency: 100

@@ -9,8 +9,39 @@
 namespace YAML {
 
 template <>
+struct convert<StreamVideoOptions> {
+  static Node encode(const StreamVideoOptions &opts) {
+    Node node;
+    node["sws_enable"] = opts.sws_enable;
+    node["sws_dst_width"] = opts.sws_dst_width;
+    node["sws_dst_height"] = opts.sws_dst_height;
+    node["sws_dst_pix_fmt"] = PixelFormatToString(opts.sws_dst_pix_fmt);
+    node["sws_flags"] = opts.sws_flags;
+    return node;
+  }
+
+  static bool decode(const Node &node, StreamVideoOptions &opts) {  // NOLINT
+    if (!node.IsMap()) {
+      return false;
+    }
+    if (node["sws_enable"])
+      opts.sws_enable = node["sws_enable"].as<bool>();
+    if (node["sws_dst_width"])
+      opts.sws_dst_width = node["sws_dst_width"].as<int>();
+    if (node["sws_dst_height"])
+      opts.sws_dst_height = node["sws_dst_height"].as<int>();
+    if (node["sws_dst_pix_fmt"])
+      opts.sws_dst_pix_fmt =
+        PixelFormatFromString(node["sws_dst_pix_fmt"].as<std::string>());
+    if (node["sws_flags"])
+      opts.sws_flags = node["sws_flags"].as<int>();
+    return true;
+  }
+};
+
+template <>
 struct convert<StreamOptions> {
-  static Node encode(const StreamOptions& opts) {
+  static Node encode(const StreamOptions &opts) {
     Node node;
     node["method"] = StreamMethodToString(opts.method);
     node["input_url"] = opts.input_url;
@@ -23,15 +54,11 @@ struct convert<StreamOptions> {
 
     node["rtbufsize"] = opts.rtbufsize;
 
-    node["sws_enable"] = opts.sws_enable;
-    node["sws_dst_width"] = opts.sws_dst_width;
-    node["sws_dst_height"] = opts.sws_dst_height;
-    node["sws_dst_pix_fmt"] = PixelFormatToString(opts.sws_dst_pix_fmt);
-    node["sws_flags"] = opts.sws_flags;
+    node["video"] = opts.video;
     return node;
   }
 
-  static bool decode(const Node& node, StreamOptions& opts) {  // NOLINT
+  static bool decode(const Node &node, StreamOptions &opts) {  // NOLINT
     if (!node.IsMap()) {
       return false;
     }
@@ -54,17 +81,8 @@ struct convert<StreamOptions> {
     if (node["rtbufsize"])
       opts.rtbufsize = node["rtbufsize"].as<int>();
 
-    if (node["sws_enable"])
-      opts.sws_enable = node["sws_enable"].as<bool>();
-    if (node["sws_dst_width"])
-      opts.sws_dst_width = node["sws_dst_width"].as<int>();
-    if (node["sws_dst_height"])
-      opts.sws_dst_height = node["sws_dst_height"].as<int>();
-    if (node["sws_dst_pix_fmt"])
-      opts.sws_dst_pix_fmt =
-        PixelFormatFromString(node["sws_dst_pix_fmt"].as<std::string>());
-    if (node["sws_flags"])
-      opts.sws_flags = node["sws_flags"].as<int>();
+    if (node["video"])
+      opts.video = node["video"].as<StreamVideoOptions>();
     return true;
   }
 };

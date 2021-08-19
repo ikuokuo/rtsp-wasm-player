@@ -21,6 +21,15 @@ enum StreamMethod {
   STREAM_METHOD_WEBCAM,
 };
 
+struct StreamVideoOptions {
+  // swscale options
+  bool sws_enable     = false;  // enable or not
+  int sws_dst_width   = 0;      // src width if <= 0
+  int sws_dst_height  = 0;      // src width if <= 0
+  AVPixelFormat sws_dst_pix_fmt = AV_PIX_FMT_NONE;  // src pix_fmt if NONE
+  int sws_flags = 0;  // SWS_BICUBIC if 0
+};
+
 struct StreamOptions {
   StreamMethod method = STREAM_METHOD_NONE;
   // if network
@@ -46,12 +55,8 @@ struct StreamOptions {
    */
   int64_t rtbufsize = 0;
 
-  // swscale options
-  bool sws_enable     = false;  // enable or not
-  int sws_dst_width   = 0;      // src width if <= 0
-  int sws_dst_height  = 0;      // src width if <= 0
-  AVPixelFormat sws_dst_pix_fmt = AV_PIX_FMT_NONE;  // src pix_fmt if NONE
-  int sws_flags = 0;  // SWS_BICUBIC if 0
+  // video options
+  StreamVideoOptions video;
 };
 
 enum StreamErrorCode {

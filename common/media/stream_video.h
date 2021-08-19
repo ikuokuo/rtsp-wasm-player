@@ -18,7 +18,7 @@ struct SwsContext;
 
 class StreamVideo : public StreamSub {
  public:
-  StreamVideo(const StreamOptions &options, AVStream *stream);
+  StreamVideo(const StreamVideoOptions &options, AVStream *stream);
   virtual ~StreamVideo();
 
   AVFrame *GetFrame(AVPacket *packet) override;
@@ -27,7 +27,7 @@ class StreamVideo : public StreamSub {
   void Free();
 
  private:
-  StreamOptions options_;
+  StreamVideoOptions options_;
 
   AVCodecContext *codec_ctx_;
   AVFrame *frame_;

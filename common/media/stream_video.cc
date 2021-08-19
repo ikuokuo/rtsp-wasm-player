@@ -17,7 +17,7 @@ extern "C" {
 
 #include "common/util/throw_error.h"
 
-StreamVideo::StreamVideo(const StreamOptions &options, AVStream *stream)
+StreamVideo::StreamVideo(const StreamVideoOptions &options, AVStream *stream)
   : StreamSub(stream), options_(options), codec_ctx_(nullptr), frame_(nullptr),
     sws_ctx_(nullptr), sws_frame_(nullptr) {
 }

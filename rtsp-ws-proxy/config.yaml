@@ -10,12 +10,10 @@ streams:
     id: "a"
     method: "file"
     input_url: "../data/test.mp4"
-    sws_enable: false
   -
     id: "b"
     method: "network"
     input_url: "rtsp://127.0.0.1:8554/test"
-    sws_enable: false
   -
     id: "c"
     method: "webcam"
@@ -26,7 +24,5 @@ streams:
     height: 480
     framerate: 20
     pixel_format: "yuyv422"
-
-    sws_enable: false
 
 stream_get_frequency: 50

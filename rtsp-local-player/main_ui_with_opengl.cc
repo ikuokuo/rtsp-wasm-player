@@ -29,10 +29,11 @@ int main(int argc, char const *argv[]) {
     return 1;
   }
 
-  if (!options.sws_enable || options.sws_dst_pix_fmt != AV_PIX_FMT_YUV420P) {
+  if (options.video.sws_enable != true ||
+      options.video.sws_dst_pix_fmt != AV_PIX_FMT_YUV420P) {
     LOG(WARNING) << " sws change to enable and yuv420p (for opengl display)";
-    options.sws_enable = true;
-    options.sws_dst_pix_fmt = AV_PIX_FMT_YUV420P;
+    options.video.sws_enable = true;
+    options.video.sws_dst_pix_fmt = AV_PIX_FMT_YUV420P;
   }
 
   StreamThread stream;

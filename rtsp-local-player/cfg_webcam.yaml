@@ -11,11 +11,12 @@ stream:
   framerate: 20
   pixel_format: "yuyv422"
 
-  sws_enable: true
-  # with opencv
-  sws_dst_pix_fmt: "bgr24"
-  # with opengl
-  # sws_dst_pix_fmt: "yuyv420p"
+  video:
+    sws_enable: true
+    # with opencv
+    sws_dst_pix_fmt: "bgr24"
+    # with opengl
+    # sws_dst_pix_fmt: "yuyv420p"
 
 ui_cv:
   stream_get_frequency: 20

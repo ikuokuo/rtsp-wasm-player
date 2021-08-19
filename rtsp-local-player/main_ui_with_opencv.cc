@@ -30,10 +30,11 @@ int main(int argc, char const *argv[]) {
     return 1;
   }
 
-  if (!options.sws_enable || options.sws_dst_pix_fmt != AV_PIX_FMT_BGR24) {
+  if (options.video.sws_enable != true ||
+      options.video.sws_dst_pix_fmt != AV_PIX_FMT_BGR24) {
     LOG(WARNING) << " sws change to enable and bgr24 (for opencv display)";
-    options.sws_enable = true;
-    options.sws_dst_pix_fmt = AV_PIX_FMT_BGR24;
+    options.video.sws_enable = true;
+    options.video.sws_dst_pix_fmt = AV_PIX_FMT_BGR24;
   }
 
   auto win_name = options.input_url;

@@ -116,7 +116,7 @@ void Stream::Open(const StreamOptions &options) {
     }
     std::shared_ptr<StreamSub> stream_sub = nullptr;
     if (codec_type == AVMEDIA_TYPE_VIDEO) {
-      stream_sub = std::make_shared<StreamVideo>(options,
+      stream_sub = std::make_shared<StreamVideo>(options.video,
         format_ctx_->streams[i]);
     } else {
       // stream of the type need support later, such as AVMEDIA_TYPE_AUDIO
