@@ -50,11 +50,6 @@ void Stream::Open(const StreamOptions &options) {
   // options
 
   format_ctx_ = avformat_alloc_context();
-  // detecting a timeout in ffmpeg
-  //  https://stackoverflow.com/a/10666409
-  // const AVIOInterruptCB int_cb = { interrupt_cb, NULL };
-  // format_ctx_->interrupt_callback.callback = interrupt_cb;
-  // format_ctx_->interrupt_callback.opaque = format_ctx_;
   AVInputFormat *input_fmt = nullptr;
   AVDictionary *input_opt = nullptr;
 
@@ -89,6 +84,13 @@ void Stream::Open(const StreamOptions &options) {
       av_dict_set_int(&input_opt, "rtbufsize", rtbufsize, 0);
     }
   }
+
+  // av_dict_set(&input_opt, "stimeout", "3000000", 0);  // 3 secs
+
+  // detecting a timeout in ffmpeg
+  //  https://stackoverflow.com/a/10666409
+  // format_ctx_->interrupt_callback.callback = interrupt_cb;
+  // format_ctx_->interrupt_callback.opaque = format_ctx_;
 
   // open
 
