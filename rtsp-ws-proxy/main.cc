@@ -19,17 +19,13 @@ extern "C" {
 
 #include <boost/version.hpp>
 
-#include "common/util/options.h"
+#include "common/util/config.h"
 #include "stream_handler.h"
 #include "stream_player.h"
 #include "ws_stream_server.h"
 
 int main(int argc, char const *argv[]) {
-  (void)argc;
-  FLAGS_logtostderr = true;
-  FLAGS_colorlogtostderr = true;
-  FLAGS_minloglevel = google::INFO;
-  FLAGS_v = 0;
+  config::InitGoogleLoggingFlags();
   google::InitGoogleLogging(argv[0]);
 
   LOG(INFO) << "boost version: " << BOOST_VERSION;
@@ -49,9 +45,10 @@ int main(int argc, char const *argv[]) {
   std::map<std::string, StreamOptions> stream_options;
   int stream_get_frequency = 20;
   bool stream_ui_enable = false;
+  LOG(INFO) << "Load config: " << argv[1];
   try {
     auto node = YAML::LoadFile(argv[1]);
-    LOG(INFO) << "Load config success: " << argv[1];
+    config::InitGoogleLoggingFlags(node["log"]);
 
     auto node_server = node["server"];
     if (node_server) {

@@ -4,3 +4,7 @@ _output/
 _install/
 
 /3rdparty/
+
+*INFO*
+*WARNING*
+*ERROR*

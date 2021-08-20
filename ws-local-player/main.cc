@@ -3,7 +3,7 @@
 #include <condition_variable>
 #include <mutex>
 
-#include "common/util/options.h"
+#include "common/util/config.h"
 #include "http_client.h"
 #include "ws_stream_client.h"
 
@@ -11,11 +11,7 @@
 #include "common/net/json.h"
 
 int main(int argc, char const *argv[]) {
-  (void)argc;
-  FLAGS_logtostderr = true;
-  FLAGS_colorlogtostderr = true;
-  FLAGS_minloglevel = google::INFO;
-  FLAGS_v = 0;
+  config::InitGoogleLoggingFlags();
   google::InitGoogleLogging(argv[0]);
 
   if (argc < 2) {
@@ -28,9 +24,10 @@ int main(int argc, char const *argv[]) {
   std::string ws_target_prefix = "/stream/";
   std::string ws_target_id;
   int ui_wait_secs = 10;
+  LOG(INFO) << "Load config: " << argv[1];
   try {
     auto node = YAML::LoadFile(argv[1]);
-    LOG(INFO) << "Load config success: " << argv[1];
+    config::InitGoogleLoggingFlags(node["log"]);
 
     if (node["server"]) {
       auto node_server = node["server"];

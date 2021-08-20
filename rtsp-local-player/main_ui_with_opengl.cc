@@ -3,14 +3,10 @@
 
 #include "common/gl/glfw_frame.h"
 #include "common/media/stream_thread.h"
-#include "common/util/options.h"
+#include "common/util/config.h"
 
 int main(int argc, char const *argv[]) {
-  (void)argc;
-  FLAGS_logtostderr = true;
-  FLAGS_colorlogtostderr = true;
-  FLAGS_minloglevel = google::INFO;
-  FLAGS_v = 2;
+  config::InitGoogleLoggingFlags();
   google::InitGoogleLogging(argv[0]);
 
   if (argc < 2) {
@@ -23,7 +19,8 @@ int main(int argc, char const *argv[]) {
   StreamOptions options{};
   try {
     node = YAML::LoadFile(argv[1]);
-    StreamOptionsParse(node, &options);
+    config::InitGoogleLoggingFlags(node["log"]);
+    options = node["stream"].as<StreamOptions>();
   } catch (const std::exception &e) {
     LOG(ERROR) << " parse options fail, " << e.what();
     return 1;

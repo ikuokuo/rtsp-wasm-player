@@ -4,6 +4,8 @@
 
 #include <string>
 
+#ifndef UTIL_CONFIG_STREAM_IGNORE
+
 #include "common/media/stream_def.h"
 
 namespace YAML {
@@ -89,14 +91,64 @@ struct convert<StreamOptions> {
 
 }  // namespace YAML
 
+#endif  // UTIL_CONFIG_STREAM_IGNORE
+
+#ifndef UTIL_CONFIG_GLOG_IGNORE
+
+#include <glog/logging.h>
+
+namespace config {
+
 inline
-void StreamOptionsParse(const YAML::Node &node, StreamOptions *opts,
-                        const std::string &key = "stream") {
-  *opts = node[key].as<StreamOptions>();
+void InitGoogleLoggingFlags() {
+  FLAGS_logtostderr = true;
+  FLAGS_alsologtostderr = false;
+  FLAGS_colorlogtostderr = true;
+
+  FLAGS_minloglevel = google::INFO;
+  FLAGS_v = 0;
+
+  FLAGS_log_prefix = true;
+
+  FLAGS_log_dir = ".";
+  FLAGS_max_log_size = 8;
+  FLAGS_stop_logging_if_full_disk = true;
+
+  /*
+  namespace gg = google;
+  for (gg::LogSeverity s = gg::GLOG_INFO; s < gg::NUM_SEVERITIES; s++) {
+    gg::SetLogDestination(s, );
+    gg::SetLogSymlink(s, );
+  }
+  */
 }
 
 inline
-void StreamOptionsParse(const std::string &path, StreamOptions *opts,
-                        const std::string &key = "stream") {
-  StreamOptionsParse(YAML::LoadFile(path), opts, key);
+void InitGoogleLoggingFlags(const YAML::Node &node) {
+  if (!node) return;
+  if (node["logtostderr"])
+    FLAGS_logtostderr = node["logtostderr"].as<bool>();
+  if (node["alsologtostderr"])
+    FLAGS_alsologtostderr = node["alsologtostderr"].as<bool>();
+  if (node["colorlogtostderr"])
+    FLAGS_colorlogtostderr = node["colorlogtostderr"].as<bool>();
+
+  if (node["minloglevel"])
+    FLAGS_minloglevel = node["minloglevel"].as<int>();
+  if (node["v"])
+    FLAGS_v = node["v"].as<int>();
+
+  if (node["log_prefix"])
+    FLAGS_log_prefix = node["log_prefix"].as<bool>();
+
+  if (node["log_dir"])
+    FLAGS_log_dir = node["log_dir"].as<std::string>();
+  if (node["max_log_size"])
+    FLAGS_max_log_size = node["max_log_size"].as<int>();
+  if (node["stop_logging_if_full_disk"])
+    FLAGS_stop_logging_if_full_disk = node["stop_logging_if_full_disk"].as<bool>();
 }
+
+}  // namespace config
+
+#endif  // UTIL_CONFIG_GLOG_IGNORE

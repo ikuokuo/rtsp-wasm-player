@@ -1,3 +1,17 @@
+log:
+  # true: stderr, false: logfiles
+  logtostderr: true
+  alsologtostderr: false
+  colorlogtostderr: true
+  # LOG(), 0: INFO, 1: WARNING, 2: ERROR, 3: FATAL
+  minloglevel: 0
+  # VLOG(N)
+  v: 0
+  log_prefix: true
+  log_dir: "."
+  max_log_size: 8
+  stop_logging_if_full_disk: true
+
 stream:
   method: "webcam"
   input_url: "/dev/video0"
