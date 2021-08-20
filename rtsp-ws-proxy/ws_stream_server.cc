@@ -16,8 +16,8 @@ extern "C" {
 #include <utility>
 #include <vector>
 
-#define WS_JSON_STREAM_INFO_IGNORE
-#include "common/util/json.h"
+#define NET_JSON_STREAM_INFO_IGNORE
+#include "common/net/json.h"
 
 namespace asio = boost::asio;
 namespace beast = boost::beast;
@@ -62,7 +62,7 @@ bool WsStreamServer::OnHandleHttpRequest(
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
     res.set(http::field::content_type, "application/json");
     res.keep_alive(req.keep_alive());
-    res.body() = ws::to_string(stream_map_);
+    res.body() = net::to_string(stream_map_);
     res.prepare_payload();
     send(std::move(res));
     return true;

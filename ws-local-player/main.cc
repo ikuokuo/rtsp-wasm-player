@@ -7,8 +7,8 @@
 #include "http_client.h"
 #include "ws_stream_client.h"
 
-#define WS_JSON_STREAM_IGNORE
-#include "common/util/json.h"
+#define NET_JSON_STREAM_IGNORE
+#include "common/net/json.h"
 
 int main(int argc, char const *argv[]) {
   (void)argc;
@@ -70,7 +70,7 @@ int main(int argc, char const *argv[]) {
   int http_wait_secs = http_options.timeout;
   bool http_resp_ok = false;
   bool http_fail = false;
-  std::shared_ptr<ws::stream_infos_t> stream_infos = nullptr;
+  std::shared_ptr<net::stream_infos_t> stream_infos = nullptr;
 
   {
     http_options.on_fail = [&http_mutex, &http_cond, &http_fail](
@@ -89,8 +89,8 @@ int main(int argc, char const *argv[]) {
           if (res.result() == boost::beast::http::status::ok) {
             std::unique_lock<std::mutex> lock(http_mutex);
             try {
-              stream_infos = std::make_shared<ws::stream_infos_t>();
-              *stream_infos = ws::to_stream_infos(
+              stream_infos = std::make_shared<net::stream_infos_t>();
+              *stream_infos = net::to_stream_infos(
                   boost::beast::buffers_to_string(res.body().data()));
               http_resp_ok = true;
             } catch (std::exception &e) {
@@ -116,7 +116,7 @@ int main(int argc, char const *argv[]) {
       LOG(INFO) << ws_target_prefix << stream_info.id;
       for (auto &&s : stream_info.subs) {
         LOG(INFO) << " " << av_get_media_type_string(s.first);
-        LOG(INFO) << "  " << ws::json(s.second);
+        LOG(INFO) << "  " << net::json(s.second);
       }
     }
 

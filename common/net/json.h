@@ -17,9 +17,9 @@ extern "C" {
 
 #include <nlohmann/json.hpp>
 
-namespace ws {
+namespace net {
 using json = nlohmann::json;
-}  // namespace ws
+}  // namespace net
 
 namespace nlohmann {
 
@@ -158,22 +158,22 @@ struct adl_serializer<AVCodecParameters> {
 
 }  // namespace nlohmann
 
-#ifndef WS_JSON_STREAM_IGNORE
+#ifndef NET_JSON_STREAM_IGNORE
 
 #include "common/media/stream.h"
 
-namespace ws {
+namespace net {
 
 using stream_t = std::shared_ptr<Stream>;
 using stream_map_t = std::unordered_map<std::string, stream_t>;
 
-}  // namespace ws
+}  // namespace net
 
 namespace nlohmann {
 
 template <>
-struct adl_serializer<ws::stream_map_t> {
-  static void to_json(json &j, const ws::stream_map_t &m) {
+struct adl_serializer<net::stream_map_t> {
+  static void to_json(json &j, const net::stream_map_t &m) {
     for (auto &&e : m) {
       json s;
       s["id"] = e.first;
@@ -188,7 +188,7 @@ struct adl_serializer<ws::stream_map_t> {
     }
   }
 
-  static void from_json(const json &j, ws::stream_map_t &m) {
+  static void from_json(const json &j, net::stream_map_t &m) {
     (void)j;
     (void)m;
   }
@@ -196,7 +196,7 @@ struct adl_serializer<ws::stream_map_t> {
 
 }  // namespace nlohmann
 
-namespace ws {
+namespace net {
 
 inline
 std::string to_string(const stream_map_t &m) {
@@ -205,28 +205,28 @@ std::string to_string(const stream_map_t &m) {
   }.dump();
 }
 
-}  // namespace ws
+}  // namespace net
 
-#endif  // WS_JSON_STREAM_IGNORE
+#endif  // NET_JSON_STREAM_IGNORE
 
-#ifndef WS_JSON_STREAM_INFO_IGNORE
+#ifndef NET_JSON_STREAM_INFO_IGNORE
 
 #include "common/media/stream_def.h"
 
-namespace ws {
+namespace net {
 
 using stream_sub_info_t = StreamSubInfo;
 using stream_sub_info_p = std::shared_ptr<stream_sub_info_t>;
 using stream_info_t = StreamInfo;
 using stream_infos_t = std::vector<stream_info_t>;
 
-}  // namespace ws
+}  // namespace net
 
 namespace nlohmann {
 
 template <>
-struct adl_serializer<ws::stream_sub_info_p> {
-  static void to_json(json &j, const ws::stream_sub_info_p &i) {
+struct adl_serializer<net::stream_sub_info_p> {
+  static void to_json(json &j, const net::stream_sub_info_p &i) {
     if (i == nullptr) {
       j = nullptr;
     } else {
@@ -236,7 +236,7 @@ struct adl_serializer<ws::stream_sub_info_p> {
     }
   }
 
-  static void from_json(const json &j, ws::stream_sub_info_p &i) {
+  static void from_json(const json &j, net::stream_sub_info_p &i) {
     if (j.is_null()) {
       i = nullptr;
     } else {
@@ -246,15 +246,15 @@ struct adl_serializer<ws::stream_sub_info_p> {
 };
 
 template <>
-struct adl_serializer<ws::stream_infos_t> {
-  static void to_json(json &j, const ws::stream_infos_t &i) {
+struct adl_serializer<net::stream_infos_t> {
+  static void to_json(json &j, const net::stream_infos_t &i) {
     (void)j;
     (void)i;
   }
 
-  static void from_json(const json &j, ws::stream_infos_t &i) {
+  static void from_json(const json &j, net::stream_infos_t &i) {
     for (auto &&j_info : j) {
-      ws::stream_info_t info;
+      net::stream_info_t info;
       j_info.at("id").get_to(info.id);
       for (int t_i = AVMEDIA_TYPE_UNKNOWN,
                t_end = AVMEDIA_TYPE_NB; t_i <= t_end; ++t_i) {
@@ -262,7 +262,7 @@ struct adl_serializer<ws::stream_infos_t> {
         auto t_s = av_get_media_type_string(t);
         if (!t_s) continue;
         if (j_info.contains(t_s)) {
-          auto sub_info = std::make_shared<ws::stream_sub_info_t>();
+          auto sub_info = std::make_shared<net::stream_sub_info_t>();
           j_info.at(t_s).get_to(sub_info);
           info.subs[t] = sub_info;
         }
@@ -274,7 +274,7 @@ struct adl_serializer<ws::stream_infos_t> {
 
 }  // namespace nlohmann
 
-namespace ws {
+namespace net {
 
 inline
 stream_infos_t to_stream_infos(const std::string &s) {
@@ -284,6 +284,6 @@ stream_infos_t to_stream_infos(const std::string &s) {
   return infos;
 }
 
-}  // namespace ws
+}  // namespace net
 
-#endif  // WS_JSON_STREAM_INFO_IGNORE
+#endif  // NET_JSON_STREAM_INFO_IGNORE
