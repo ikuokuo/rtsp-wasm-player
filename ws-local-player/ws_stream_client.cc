@@ -95,13 +95,13 @@ void WsStreamClient::Run() {
   {
     int ui_wait_ms = 2000;
     int n = ui_wait_secs_ * 1000 / ui_wait_ms;
-    while (--n) {
+    while (n--) {
       std::unique_lock<std::mutex> lock(ui_mutex_);
       auto ok = ui_cond_.wait_for(lock,
           std::chrono::milliseconds(ui_wait_ms),
           [this]() { return ui_ok_; });
       if (ok) break;
-      LOG(INFO) << "Stream[" << info_.id << "] wait ...";
+      LOG_IF(INFO, n) << "Stream[" << info_.id << "] wait ...";
     }
     if (ui_ok_) {
       {
