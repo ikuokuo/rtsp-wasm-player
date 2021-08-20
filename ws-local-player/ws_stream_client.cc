@@ -47,8 +47,12 @@ class StreamVideoOpContext : public StreamOpContext {
 
 WsStreamClient::WsStreamClient(
     const WsClientOptions &options,
-    const StreamInfo &info)
-  : WsClient(options), info_(info), ui_ok_(false), ui_(nullptr) {
+    const StreamInfo &info,
+    int ui_wait_secs)
+  : WsClient(options), info_(info), ui_wait_secs_(ui_wait_secs),
+    ui_ok_(false), ui_(nullptr) {
+  if (ui_wait_secs_ <= 0) ui_wait_secs_ = 10;
+
   for (auto &&e : info.subs) {
     auto type = e.first;
     auto sub_info = e.second;
@@ -89,11 +93,12 @@ void WsStreamClient::Run() {
   });
 
   {
-    int n = 5;
+    int ui_wait_ms = 2000;
+    int n = ui_wait_secs_ * 1000 / ui_wait_ms;
     while (--n) {
       std::unique_lock<std::mutex> lock(ui_mutex_);
       auto ok = ui_cond_.wait_for(lock,
-          std::chrono::seconds(2),
+          std::chrono::milliseconds(ui_wait_ms),
           [this]() { return ui_ok_; });
       if (ok) break;
       LOG(INFO) << "Stream[" << info_.id << "] wait ...";

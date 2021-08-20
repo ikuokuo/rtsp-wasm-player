@@ -25,7 +25,8 @@ class WsStreamClient : public WsClient {
   using stream_ops_t =
       std::unordered_map<AVMediaType, std::shared_ptr<StreamOp>>;
 
-  WsStreamClient(const WsClientOptions &options, const StreamInfo &info);
+  WsStreamClient(const WsClientOptions &options,
+      const StreamInfo &info, int ui_wait_secs);
   ~WsStreamClient() override;
 
   void Run() override;
@@ -36,6 +37,7 @@ class WsStreamClient : public WsClient {
   StreamInfo info_;
   stream_ops_t ops_;
 
+  int ui_wait_secs_;
   bool ui_ok_;
   std::shared_ptr<GlfwFrame> ui_;
   GlfwInitParams ui_params_;

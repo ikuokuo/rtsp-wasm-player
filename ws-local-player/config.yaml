@@ -9,3 +9,6 @@ server:
   ws:
     target_prefix: "/stream/"
     target_id: "a"
+
+ui:
+  wait_secs: 10

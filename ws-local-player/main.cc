@@ -27,12 +27,13 @@ int main(int argc, char const *argv[]) {
   WsClientOptions ws_options{};
   std::string ws_target_prefix = "/stream/";
   std::string ws_target_id;
+  int ui_wait_secs = 10;
   try {
     auto node = YAML::LoadFile(argv[1]);
     LOG(INFO) << "Load config success: " << argv[1];
 
-    auto node_server = node["server"];
-    if (node_server) {
+    if (node["server"]) {
+      auto node_server = node["server"];
       if (node_server["host"])
         http_options.host = ws_options.host =
             node_server["host"].as<std::string>();
@@ -56,6 +57,12 @@ int main(int argc, char const *argv[]) {
         if (node_ws["target_id"])
           ws_target_id = node_ws["target_id"].as<std::string>();
       }
+    }
+
+    if (node["ui"]) {
+      auto node_ui = node["ui"];
+      if (node_ui["wait_secs"])
+        ui_wait_secs = node_ui["wait_secs"].as<int>();
     }
 
     if (argc >= 3)
@@ -132,7 +139,7 @@ int main(int argc, char const *argv[]) {
       LOG(ERROR) << what << ": " << ec.message();
     };
 
-    WsStreamClient ws_client(ws_options, stream_info);
+    WsStreamClient ws_client(ws_options, stream_info, ui_wait_secs);
     ws_client.Run();
   } else if (http_fail) {
     LOG(ERROR) << "HTTP get fail";
