@@ -12,9 +12,7 @@ extern "C" {
 
 #include <glog/logging.h>
 
-#include <algorithm>
 #include <utility>
-#include <vector>
 
 #define NET_JSON_STREAM_INFO_IGNORE
 #include "common/net/json.h"
@@ -46,7 +44,7 @@ void WsStreamServer::Send(
     // need update if stream loop
     stream_map_[id] = stream;
   }
-  datas_map_[id]->Put(std::make_shared<Data>(type, packet));
+  datas_map_[id]->Put(std::make_shared<data_t>(type, packet));
 }
 
 bool WsStreamServer::OnHandleHttpRequest(
@@ -114,25 +112,13 @@ bool WsStreamServer::OnHandleWebSocket(
 bool WsStreamServer::SendData(
     boost::beast::websocket::stream<boost::beast::tcp_stream> &ws,
     const std::string &id,
-    const std::shared_ptr<Data> &data,
+    const data_p &data,
     boost::beast::error_code &ec,
     boost::asio::yield_context yield) {
   VLOG(1) << "Stream[" << id << "] packet size=" << data->packet->size;
 
-  // type size data, ...
-  // 1    4    -
-  auto data_n = data->packet->size;
-  auto bytes = std::vector<char>(5 + data_n);
-  auto buffer = bytes.data();
-  *(buffer) = static_cast<char>(AVMEDIA_TYPE_VIDEO);
-  *(buffer+1) = static_cast<char>((data_n >> 24) & 0xff);
-  *(buffer+2) = static_cast<char>((data_n >> 16) & 0xff);
-  *(buffer+3) = static_cast<char>((data_n >> 8) & 0xff);
-  *(buffer+4) = static_cast<char>((data_n) & 0xff);
-  std::copy(data->packet->data, data->packet->data + data_n, buffer + 5);
-
   ws.binary(true);
-  ws.async_write(asio::buffer(bytes), yield[ec]);
+  ws.async_write(asio::buffer(data->ToBytes()), yield[ec]);
 
   if (ec == websocket::error::closed) return false;
   if (ec) {

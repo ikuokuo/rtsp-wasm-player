@@ -33,8 +33,6 @@ class WsStreamClient : public WsClient {
  protected:
   bool OnRead(boost::beast::flat_buffer *buffer) override;
 
-  virtual void OnPacket(const AVMediaType &type, AVPacket *packet);
-
   StreamInfo info_;
   stream_ops_t ops_;
 
@@ -43,6 +41,4 @@ class WsStreamClient : public WsClient {
   GlfwInitParams ui_params_;
   std::mutex ui_mutex_;
   std::condition_variable ui_cond_;
-
-  AVPacket *packet_;
 };

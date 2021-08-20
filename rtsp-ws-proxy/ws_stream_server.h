@@ -6,23 +6,14 @@
 
 #include "ws_server.h"
 #include "common/media/stream.h"
+#include "common/net/packet.h"
 #include "common/util/blocking_queue.h"
 
 class WsStreamServer : public WsServer {
  public:
-  struct Data {
-    AVMediaType type;
-    AVPacket *packet;
-
-    Data(AVMediaType type, AVPacket *p)
-      : type(type), packet(av_packet_clone(p)) {
-    }
-    ~Data() {
-      av_packet_free(&packet);
-    }
-  };
-
-  using data_queue_t = BlockingQueue<std::shared_ptr<Data>>;
+  using data_t = net::Data;
+  using data_p = std::shared_ptr<data_t>;
+  using data_queue_t = BlockingQueue<data_p>;
 
   explicit WsStreamServer(const WsServerOptions &options);
   ~WsStreamServer() override;
@@ -46,7 +37,7 @@ class WsStreamServer : public WsServer {
   bool SendData(
       boost::beast::websocket::stream<boost::beast::tcp_stream> &ws,
       const std::string &id,
-      const std::shared_ptr<Data> &data,
+      const data_p &data,
       boost::beast::error_code &ec,
       boost::asio::yield_context yield);
 

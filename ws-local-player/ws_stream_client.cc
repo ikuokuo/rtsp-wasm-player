@@ -18,6 +18,7 @@ extern "C" {
 #include <vector>
 
 #include "common/media/stream_video.h"
+#include "common/net/packet.h"
 
 namespace asio = boost::asio;
 
@@ -47,8 +48,7 @@ class StreamVideoOpContext : public StreamOpContext {
 WsStreamClient::WsStreamClient(
     const WsClientOptions &options,
     const StreamInfo &info)
-  : WsClient(options), info_(info), ui_ok_(false), ui_(nullptr),
-    packet_(av_packet_alloc()) {
+  : WsClient(options), info_(info), ui_ok_(false), ui_(nullptr) {
   for (auto &&e : info.subs) {
     auto type = e.first;
     auto sub_info = e.second;
@@ -72,7 +72,6 @@ WsStreamClient::WsStreamClient(
 }
 
 WsStreamClient::~WsStreamClient() {
-  av_packet_free(&packet_);
 }
 
 void WsStreamClient::Run() {
@@ -94,9 +93,10 @@ void WsStreamClient::Run() {
     while (--n) {
       std::unique_lock<std::mutex> lock(ui_mutex_);
       auto ok = ui_cond_.wait_for(lock,
-          std::chrono::seconds(1),
+          std::chrono::seconds(2),
           [this]() { return ui_ok_; });
       if (ok) break;
+      LOG(INFO) << "Stream[" << info_.id << "] wait ...";
     }
     if (ui_ok_) {
       {
@@ -106,6 +106,8 @@ void WsStreamClient::Run() {
       LOG(INFO) << "Stream[" << info_.id << "] ui run";
       ui_->Run(ui_params_);
       LOG(INFO) << "Stream[" << info_.id << "] ui over";
+    } else {
+      LOG(WARNING) << "Stream[" << info_.id << "] wait timeout";
     }
   }
 
@@ -115,40 +117,18 @@ void WsStreamClient::Run() {
 }
 
 bool WsStreamClient::OnRead(boost::beast::flat_buffer *buffer) {
-  // type size data, ...
-  // 1    4    -
-  auto data = buffer->data();
-  auto bytes = reinterpret_cast<char *>(data.data());
+  net::Data data;
+  auto buf = buffer->data();
+  data.FromBytes(buf);
+  buffer->consume(buf.size());
 
-  auto type = static_cast<AVMediaType>(*(bytes));
-  auto size = ((*(bytes + 1) & 0xff) << 24) |
-      ((*(bytes + 2) & 0xff) << 16) |
-      ((*(bytes + 3) & 0xff) << 8) |
-      ((*(bytes + 4) & 0xff));
-  buffer->consume(5);
+  VLOG(1) << "packet type=" << data.type << ", size=" << data.packet->size;
 
-  if (type == AVMEDIA_TYPE_VIDEO) {
-    auto data = static_cast<uint8_t *>(av_malloc(size));
-    if (data) {
-      std::copy(bytes, bytes + size, data);
-      av_packet_from_data(packet_, data, size);
-      OnPacket(type, packet_);
-      av_packet_unref(packet_);
-    } else {
-      LOG(ERROR) << "av_malloc fail, size=" << size;
-    }
-  }
-  buffer->consume(size);
-  return true;
-}
+  auto op = ops_[data.type];
+  auto frame = op->GetFrame(data.packet);
+  if (frame == nullptr) return true;
 
-void WsStreamClient::OnPacket(const AVMediaType &type, AVPacket *packet) {
-  VLOG(1) << "packet type=" << type << ", size=" << packet->size;
-  auto op = ops_[type];
-  auto frame = op->GetFrame(packet);
-  if (frame == nullptr) return;
-
-  if (type == AVMEDIA_TYPE_VIDEO) {
+  if (data.type == AVMEDIA_TYPE_VIDEO) {
     VLOG(1) << " [v] frame size=" << frame->width << "x" << frame->height
         << ", fmt: " << frame->format;
     if (ui_ok_) {
@@ -161,4 +141,5 @@ void WsStreamClient::OnPacket(const AVMediaType &type, AVPacket *packet) {
       ui_cond_.notify_one();
     }
   }
+  return true;
 }
