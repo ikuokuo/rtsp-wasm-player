@@ -13,6 +13,8 @@ log:
   stop_logging_if_full_disk: true
 
 stream:
+  # cd data; nohup ffserver -f ffserver.conf &
+  #  or
   # vlc file:///$(pwd)/data/test.mp4 --loop \
   # --sout '#gather:transcode{vcodec=h264}:rtp{sdp=rtsp://:8554/test}' \
   # --network-caching=1500 --sout-all --sout-keep
