@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WS Wasm Player</title>
+    <link href="https://unpkg.com/normalize.css@8.0.1/normalize.css" rel="stylesheet" crossorigin>
+    <style type="text/css">
+      #root {
+        display: flex;
+        flex-direction: column;
+        margin: 1rem;
+      }
+      #root > * {
+        margin: 0 0 1rem 0;
+      }
+      #root > *:last-child {
+        margin: 0;
+      }
+      .row {
+        display: flex;
+        flex-direction: row;
+      }
+      .row > * {
+        margin: 0 1rem 0 0;
+      }
+      .row > *:last-child {
+        margin: 0;
+      }
+
+      .card {
+        display: flex;
+        flex-direction: column;
+        /* width: 400px; */
+        flex: 0 0 400px;
+      }
+      .card > * {
+        margin: 0.5rem 0;
+      }
+      .card_title {
+        flex: auto;
+        font-size: 2rem;
+      }
+      .card_info {
+        flex: auto;
+      }
+      .card_content {
+        flex: auto;
+      }
+      .card_action {
+        flex: auto;
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+      }
+      .card_action > button {
+        width: 80px;
+        margin: 0 0.5rem;
+      }
+
+      .input {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        margin: 0.5rem 0;
+      }
+      .input > .input_label, .input_select {
+        flex: 0 0 60px;
+      }
+      .input > .input_item {
+        flex: auto;
+      }
+      .input > .input-error {
+        border: 2px solid red;
+      }
+      .input > .input-error:focus {
+        outline: none !important;
+        border: 2px solid red;
+      }
+
+      .panel {
+        flex: auto;
+        max-height: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root">
+      <div class="row">
+        <div class="card">
+          <div class="card_title">WS Wasm Player</div>
+          <div class="card_info" hidden></div>
+          <div class="card_content">
+            <div class="input">
+              <span class="input_label">Host</span>
+              <input class="input_item" id="input_host" type="text" value="127.0.0.1"/>
+            </div>
+            <div class="input">
+              <span class="input_label">Port</span>
+              <input class="input_item" id="input_port" type="text" value="8080"/>
+            </div>
+            <div class="input">
+              <span class="input_label">Stream</span>
+              <span class="input_item" id="stream_url"></span>
+              <select class="input_select" id="stream_select_id">
+              </select>
+            </div>
+          </div>
+          <div class="card_action">
+            <button id="btn_refresh">Refresh</button>
+            <button id="btn_open">Open</button>
+          </div>
+        </div>
+        <pre class="panel" id="stream_info" style="overflow: auto">
+        </pre>
+      </div>
+      <div>
+        <canvas id="canvas" width="640" height="480"></canvas>
+      </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin></script>
+    <script>
+      let config = new class {
+        streams = undefined;
+        streamSelectId = undefined;
+        getStream() {
+          return this.streams &&
+            this.streams.find((s) => s.id === this.streamSelectId);
+        }
+        resetStreams() {
+          this.streams = undefined;
+          this.streamSelectId = undefined;
+        }
+      };
+
+      $(function() {
+        // input
+        const getUrl = () => {
+          return `http://${$('#input_host').val()}:${$('#input_port').val()}`
+        }
+        const updateStreamUrl = () => {
+          $('#stream_url').html(`${getUrl()}/stream/`);
+        };
+        $('#input_host').on('input', function() {
+          if (isIp($(this).val())) {
+            $(this).removeClass('input-error');
+            updateStreamUrl();
+          } else {
+            $(this).addClass('input-error');
+          }
+        });
+        $('#input_port').on('input', function() {
+          if (isPort($(this).val())) {
+            $(this).removeClass('input-error');
+            updateStreamUrl();
+          } else {
+            $(this).addClass('input-error');
+          }
+        });
+        updateStreamUrl();
+
+        // info
+        const updateErrorMessage = (msg, color='red') => {
+          const $card_info = $('.card_info');
+          if (msg === undefined) {
+            $card_info.hide();
+          } else {
+            $card_info.html(msg).css({
+              color: color,
+              display: "block",
+            });
+          }
+        };
+        const updateStreamInfo = (stream = config.getStream()) => {
+          stream && $('#stream_info').html(JSON.stringify(stream, null, 2));
+        };
+
+        // select
+        const updateStreamIds = (streams = config.streams) => {
+          const $select = $('#stream_select_id');
+          $select.empty();
+          streams.forEach(s => {
+            $select.append($('<option>', {
+              text: s.id,
+              value: s.id,
+            }));
+          });
+          config.streamSelectId = $('#stream_select_id option:first').val();
+          updateStreamInfo();
+        };
+        $('#stream_select_id').change(function() {
+          config.streamSelectId = $(this).val();
+          updateStreamInfo();
+        });
+
+        const resetStreamUi = () => {
+          $('#stream_select_id').empty();
+          $('#stream_info').empty();
+          config.resetStreams();
+        };
+
+        // action
+        const getStreamIds = () => {
+          $.ajax({
+            url: `${getUrl()}/streams`,
+            type: 'GET',
+            crossDomain: true,
+          })
+          .done(function(data) {
+            if (data.hasOwnProperty('streams')) {
+              config.streams = data.streams;
+              updateStreamIds();
+              updateErrorMessage();
+            } else {
+              updateErrorMessage('stream ids got, but key not found');
+              resetStreamUi();
+            }
+          })
+          .fail(function() {
+            updateErrorMessage('stream ids get fail');
+            resetStreamUi();
+          })
+        };
+        $('#btn_refresh').click(function() {
+          getStreamIds();
+        });
+        $('#btn_open').click(function() {
+        });
+        getStreamIds();
+      });
+
+      const isIp = (s) => {
+        if (typeof(s) !== 'string') {
+          return false;
+        } else if (!s.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
+          return false;
+        } else {
+          return s.split('.').filter(n => n >= 0 && n <= 255).length === 4;
+        }
+      }
+
+      const isPort = (s) => {
+        if (typeof(s) === 'string') {
+          if (!s.match(/^\d+$/)) {
+            return false;
+          }
+          n = parseInt(s);
+        } else if (typeof(s) === 'number') {
+          n = s;
+        } else {
+          return false;
+        }
+        return n >= 0 && n <= 65535;
+      }
+    </script>
+  </body>
+</html>

@@ -118,6 +118,14 @@ WebSocket > Packets > Wasm FFmpeg decode to YUV > WebGL display
                                                 > Wasm OpenGL display
 ```
 
+Run:
+
+```bash
+cd ws-wasm-player
+# open index.html in browser
+#   or http://127.0.0.1:8080 (served by rtsp-ws-proxy by default)
+```
+
 ### WS Local Player
 
 ```txt
