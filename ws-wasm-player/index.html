@@ -121,6 +121,7 @@
       </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin></script>
+    <script src="lib/webgl.js"></script>
     <script>
       let config = new class {
         streams = undefined;
@@ -229,6 +230,10 @@
         $('#btn_open').click(function() {
         });
         getStreamIds();
+
+        // render
+        const player = new WebGLPlayer($('#canvas')[0]);
+        player.render();
       });
 
       const isIp = (s) => {
