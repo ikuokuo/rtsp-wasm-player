@@ -53,7 +53,7 @@ bool WsStreamServer::OnHandleHttpRequest(
   (void)send;
 
   auto target = req.target();
-  if (target.starts_with("/streams")) {
+  if (target == "/streams") {
     LOG(INFO) << "http req: " << target;
     http::response<http::string_body> res{
         http::status::ok, req.version()};

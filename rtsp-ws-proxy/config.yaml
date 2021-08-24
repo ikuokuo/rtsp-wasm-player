@@ -17,7 +17,7 @@ server:
   port: 8080
   threads: 3
   http_enable: true
-  http_doc_root: "."
+  http_doc_root: "../ws-wasm-player/"
 
 streams:
   -
