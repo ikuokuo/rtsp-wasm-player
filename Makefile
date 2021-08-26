@@ -66,6 +66,14 @@ clean:
 	@$(call rm,$(OUTPUT_DIR))
 	@$(call rm,$(INSTALL_DIR))
 
+.PHONY: cleanall
+cleanall:
+	@for d in $$(find . -maxdepth 2 -name _build -type d); do \
+	$(call rm,$$d); done
+	@for d in $$(find . -maxdepth 2 -name _output -type d); do \
+	$(call rm,$$d); done
+	@$(call rm,$(INSTALL_DIR))
+
 .PHONY: print
 print:
 	@$(call echo,Make $@)
