@@ -122,6 +122,7 @@
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin></script>
     <script src="lib/webgl.js"></script>
+    <script src="lib/ws_client.js"></script>
     <script>
       let config = new class {
         streams = undefined;
@@ -137,9 +138,11 @@
       };
 
       $(function() {
+        const client = new WsClient();
+
         // input
-        const getUrl = () => {
-          return `http://${$('#input_host').val()}:${$('#input_port').val()}`
+        const getUrl = (protocol='http') => {
+          return `${protocol}://${$('#input_host').val()}:${$('#input_port').val()}`;
         }
         const updateStreamUrl = () => {
           $('#stream_url').html(`${getUrl()}/stream/`);
@@ -206,16 +209,16 @@
         const getStreamIds = () => {
           $.ajax({
             url: `${getUrl()}/streams`,
-            type: 'GET',
+            method: 'GET',
             crossDomain: true,
           })
           .done(function(data) {
-            if (data.hasOwnProperty('streams')) {
+            if (data && data.hasOwnProperty('streams')) {
               config.streams = data.streams;
               updateStreamIds();
               updateErrorMessage();
             } else {
-              updateErrorMessage('stream ids got, but key not found');
+              updateErrorMessage('stream ids get fail, or key not found');
               resetStreamUi();
             }
           })
@@ -227,13 +230,23 @@
         $('#btn_refresh').click(function() {
           getStreamIds();
         });
+        const updateStreamStatus = () => {
+          $('#btn_open').html(client.isOpen() ? 'Close' : 'Open')
+        };
         $('#btn_open').click(function() {
+          const stream = config.getStream();
+          if (client.isOpen()) {
+            client.close();
+          } else {
+            client.open({
+              url: `${getUrl('ws')}/stream/${stream.id}`,
+              player: new WebGLPlayer($('#canvas')[0]),
+            });
+          }
+          updateStreamStatus();
         });
+        updateStreamStatus();
         getStreamIds();
-
-        // render
-        const player = new WebGLPlayer($('#canvas')[0]);
-        player.render();
       });
 
       const isIp = (s) => {
