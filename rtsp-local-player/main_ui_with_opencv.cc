@@ -3,6 +3,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
+#define UTIL_CONFIG_STREAM
 #include "common/media/stream.h"
 #include "common/util/config.h"
 #include "common/util/rate.h"

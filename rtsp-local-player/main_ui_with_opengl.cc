@@ -1,6 +1,7 @@
 #include <condition_variable>
 #include <mutex>
 
+#define UTIL_CONFIG_STREAM
 #include "common/gl/glfw_frame.h"
 #include "common/media/stream_thread.h"
 #include "common/util/config.h"

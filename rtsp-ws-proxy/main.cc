@@ -19,7 +19,9 @@ extern "C" {
 
 #include <boost/version.hpp>
 
+#define UTIL_CONFIG_STREAM
 #include "common/util/config.h"
+
 #include "stream_handler.h"
 #include "stream_player.h"
 #include "ws_stream_server.h"
