@@ -24,7 +24,10 @@ namespace websocket = beast::websocket;
 using tcp = boost::asio::ip::tcp;
 
 WsStreamServer::WsStreamServer(const WsServerOptions &options)
-  : WsServer(options) {
+  : WsServer(options),
+    cors_(options.cors.enabled
+        ? std::make_shared<net::Cors<>>(options.cors)
+        : nullptr) {
 }
 
 WsStreamServer::~WsStreamServer() {
@@ -57,6 +60,10 @@ bool WsStreamServer::OnHandleHttpRequest(
     LOG(INFO) << "http req: " << target;
     http::response<http::string_body> res{
         http::status::ok, req.version()};
+    if (cors_ && cors_->Handle(req, res)) {
+      send(std::move(res));
+      return true;
+    }
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
     res.set(http::field::content_type, "application/json");
     res.keep_alive(req.keep_alive());

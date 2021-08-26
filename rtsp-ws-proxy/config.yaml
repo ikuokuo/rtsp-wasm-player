@@ -19,6 +19,17 @@ server:
   http_enable: true
   http_doc_root: "../ws-wasm-player/"
 
+  cors:
+    enabled: true
+    allowed_origins: "*"
+    allowed_methods: [ GET ]
+    allowed_headers:
+      - Content-Type
+    allowed_credentials: false
+    exposed_headers:
+      - Content-Type
+    debug: false
+
 streams:
   -
     id: "a"

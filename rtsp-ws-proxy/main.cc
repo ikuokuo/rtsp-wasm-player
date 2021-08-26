@@ -20,11 +20,20 @@ extern "C" {
 #include <boost/version.hpp>
 
 #define UTIL_CONFIG_STREAM
+#define UTIL_CONFIG_CORS
 #include "common/util/config.h"
 
 #include "stream_handler.h"
 #include "stream_player.h"
 #include "ws_stream_server.h"
+
+struct Config {
+  WsServerOptions options{};
+  std::map<std::string, StreamOptions> stream_options;
+  int stream_get_frequency = 20;
+  bool stream_ui_enable = false;
+};
+int LoadConfig(const std::string &path, Config *config);
 
 int main(int argc, char const *argv[]) {
   config::InitGoogleLoggingFlags();
@@ -43,13 +52,55 @@ int main(int argc, char const *argv[]) {
     return 1;
   }
 
-  WsServerOptions options{};
-  std::map<std::string, StreamOptions> stream_options;
-  int stream_get_frequency = 20;
-  bool stream_ui_enable = false;
-  LOG(INFO) << "Load config: " << argv[1];
+  Config config{};
+  auto ret = LoadConfig(argv[1], &config);
+  if (ret != EXIT_SUCCESS) {
+    return ret;
+  }
+
+  WsStreamServer server(config.options);
+
+  std::vector<std::shared_ptr<StreamHandler>> streams;
+  std::unordered_map<std::string, std::shared_ptr<StreamPlayer>> players;
+  for (auto &&entry : config.stream_options) {
+    auto id = entry.first;
+    std::shared_ptr<StreamPlayer> player = nullptr;
+    if (config.stream_ui_enable) {
+      player = std::make_shared<StreamPlayer>(id);
+      player->Start();
+      players[id] = player;
+    }
+    auto stream = std::make_shared<StreamHandler>(
+      id, entry.second, config.stream_get_frequency,
+      [id, &server, player](
+          const std::shared_ptr<Stream> &stream,
+          const AVMediaType &type, AVPacket *packet) {
+        server.Send(id, stream, type, packet);
+        if (player != nullptr) {
+          player->Send(id, stream, type, packet);
+        }
+      });
+    stream->Start();
+    streams.push_back(stream);
+  }
+
+  server.Run();
+
+  for (auto &&s : streams)
+    s->Stop();
+  for (auto &&p : players)
+    p.second->Stop();
+  return EXIT_SUCCESS;
+}
+
+int LoadConfig(const std::string &path, Config *config) {
+  LOG(INFO) << "Load config: " << path;
+  auto &options = config->options;
+  auto &stream_options = config->stream_options;
+  auto &stream_get_frequency = config->stream_get_frequency;
+  auto &stream_ui_enable = config->stream_ui_enable;
   try {
-    auto node = YAML::LoadFile(argv[1]);
+    auto node = YAML::LoadFile(path);
     config::InitGoogleLoggingFlags(node["log"]);
 
     auto node_server = node["server"];
@@ -64,6 +115,9 @@ int main(int argc, char const *argv[]) {
         options.http_enable = node_server["http_enable"].as<bool>();
       if (node_server["http_doc_root"])
         options.http_doc_root = node_server["http_doc_root"].as<std::string>();
+
+      if (node_server["cors"])
+        options.cors = node_server["cors"].as<net::Options>();
     }
 
     auto node_streams = node["streams"];
@@ -89,37 +143,5 @@ int main(int argc, char const *argv[]) {
     return EXIT_FAILURE;
   }
 
-  WsStreamServer server(options);
-
-  std::vector<std::shared_ptr<StreamHandler>> streams;
-  std::unordered_map<std::string, std::shared_ptr<StreamPlayer>> players;
-  for (auto &&entry : stream_options) {
-    auto id = entry.first;
-    std::shared_ptr<StreamPlayer> player = nullptr;
-    if (stream_ui_enable) {
-      player = std::make_shared<StreamPlayer>(id);
-      player->Start();
-      players[id] = player;
-    }
-    auto stream = std::make_shared<StreamHandler>(
-      id, entry.second, stream_get_frequency,
-      [id, &server, player](
-          const std::shared_ptr<Stream> &stream,
-          const AVMediaType &type, AVPacket *packet) {
-        server.Send(id, stream, type, packet);
-        if (player != nullptr) {
-          player->Send(id, stream, type, packet);
-        }
-      });
-    stream->Start();
-    streams.push_back(stream);
-  }
-
-  server.Run();
-
-  for (auto &&s : streams)
-    s->Stop();
-  for (auto &&p : players)
-    p.second->Stop();
   return EXIT_SUCCESS;
 }

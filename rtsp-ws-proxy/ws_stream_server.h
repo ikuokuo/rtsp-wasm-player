@@ -43,4 +43,6 @@ class WsStreamServer : public WsServer {
 
   std::unordered_map<std::string, std::shared_ptr<Stream>> stream_map_;
   std::unordered_map<std::string, std::shared_ptr<data_queue_t>> datas_map_;
+
+  std::shared_ptr<net::Cors<>> cors_;
 };

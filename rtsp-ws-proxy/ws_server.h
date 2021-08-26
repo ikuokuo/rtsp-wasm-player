@@ -3,11 +3,13 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/spawn.hpp>
 
+#include "common/net/cors.h"
 #include "ws_ext.h"
 
 struct WsServerOptions {
@@ -20,6 +22,8 @@ struct WsServerOptions {
   //  "": deny access the filesystem
   //  "/", "//": will access the filesystem root
   std::string http_doc_root = ".";
+
+  net::Options cors{};
 
   bool signal_exit_enable = true;
   bool thread_main_block = true;

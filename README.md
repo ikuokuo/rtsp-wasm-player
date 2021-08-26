@@ -122,7 +122,8 @@ Run:
 
 ```bash
 cd ws-wasm-player
-# open index.html in browser
+python -m http.server 8000
+# open http://127.0.0.1:8000 in browser
 #   or http://127.0.0.1:8080 (served by rtsp-ws-proxy by default)
 ```
 

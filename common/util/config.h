@@ -3,6 +3,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <string>
+#include <vector>
 
 #define UTIL_CONFIG_GLOG
 
@@ -154,3 +155,52 @@ struct convert<StreamOptions> {
 }  // namespace YAML
 
 #endif  // UTIL_CONFIG_STREAM
+
+#ifdef UTIL_CONFIG_CORS
+
+#include "common/net/cors.h"
+
+namespace YAML {
+
+template <>
+struct convert<net::Options> {
+  static bool decode(const Node &node, net::Options &opts) {
+    auto parseAsStrings = [](const std::string &k,
+                             const YAML::Node &n,
+                             std::vector<std::string> &v) {
+      if (!n) return;
+      if (n.IsScalar()) {
+        v.push_back(n.as<std::string>());
+      } else if (n.IsSequence()) {
+        for (auto i = n.begin(); i != n.end(); ++i) {
+          v.push_back(i->as<std::string>());
+        }
+      } else {
+        std::stringstream ss;
+        ss << "cors." << k << " not a string value or list, ignored";
+        throw YAML::Exception(n.Mark(), ss.str());
+      }
+    };
+    if (node["enabled"])
+      opts.enabled = node["enabled"].as<bool>();
+    parseAsStrings("allowed_origins", node["allowed_origins"],
+                    opts.allowed_origins);
+    parseAsStrings("allowed_methods", node["allowed_methods"],
+                    opts.allowed_methods);
+    parseAsStrings("allowed_headers", node["allowed_headers"],
+                    opts.allowed_headers);
+    parseAsStrings("exposed_headers", node["exposed_headers"],
+                    opts.exposed_headers);
+    if (node["allowed_credentials"])
+      opts.allowed_credentials = node["allowed_credentials"].as<bool>();
+    if (node["max_age"])
+      opts.max_age = node["max_age"].as<int>();
+    if (node["debug"])
+      opts.debug = node["debug"].as<bool>();
+    return true;
+  }
+};
+
+}  // namespace YAML
+
+#endif  // UTIL_CONFIG_CORS
