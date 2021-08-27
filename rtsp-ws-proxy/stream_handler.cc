@@ -11,10 +11,9 @@ extern "C" {
 }
 #endif
 
-#include <glog/logging.h>
-
 #include <functional>
 
+#include "common/util/log.h"
 #include "common/util/throw_error.h"
 
 StreamHandler::StreamHandler(const std::string &id,

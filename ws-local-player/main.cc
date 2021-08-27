@@ -1,5 +1,3 @@
-#include <glog/logging.h>
-
 #include <condition_variable>
 #include <mutex>
 
@@ -9,6 +7,7 @@
 
 #define NET_JSON_STREAM_IGNORE
 #include "common/net/json.h"
+#include "common/util/log.h"
 
 int main(int argc, char const *argv[]) {
   config::InitGoogleLoggingFlags();

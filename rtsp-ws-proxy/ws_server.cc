@@ -1,12 +1,12 @@
 #include "ws_server.h"
 
-#include <glog/logging.h>
-
 #include <thread>
 #include <utility>
 #include <vector>
 
 #include <boost/asio/signal_set.hpp>
+
+#include "common/util/log.h"
 
 namespace asio = boost::asio;
 namespace beast = boost::beast;

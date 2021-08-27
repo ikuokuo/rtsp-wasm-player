@@ -15,8 +15,7 @@ extern "C" {
 }
 #endif
 
-#include <glog/logging.h>
-
+#include "common/util/log.h"
 #include "common/util/throw_error.h"
 
 StreamVideoOp::StreamVideoOp(

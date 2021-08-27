@@ -3,7 +3,6 @@
 #include <memory>
 
 #include <GL/glew.h>
-#include <glog/logging.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,6 +13,8 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+#include "common/util/log.h"
 
 #include "glfw_base.h"
 #include "shader.h"

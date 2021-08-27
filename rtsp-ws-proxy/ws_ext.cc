@@ -1,10 +1,10 @@
 #include "ws_ext.h"
 
-#include <glog/logging.h>
-
 #include <thread>
 
 #include <boost/asio/signal_set.hpp>
+
+#include "common/util/log.h"
 
 namespace ws_ext {
 

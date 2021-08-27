@@ -10,8 +10,6 @@ extern "C" {
 }
 #endif
 
-#include <glog/logging.h>
-
 #include <algorithm>
 #include <chrono>
 #include <thread>
@@ -19,6 +17,7 @@ extern "C" {
 
 #include "common/media/stream_video.h"
 #include "common/net/packet.h"
+#include "common/util/log.h"
 
 namespace asio = boost::asio;
 

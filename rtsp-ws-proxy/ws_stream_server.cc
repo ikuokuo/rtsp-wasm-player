@@ -10,12 +10,11 @@ extern "C" {
 }
 #endif
 
-#include <glog/logging.h>
-
 #include <utility>
 
 #define NET_JSON_STREAM_INFO_IGNORE
 #include "common/net/json.h"
+#include "common/util/log.h"
 
 namespace asio = boost::asio;
 namespace beast = boost::beast;

@@ -1,12 +1,12 @@
 #include "ws_client.h"
 
-#include <glog/logging.h>
-
 #include <chrono>
 #include <functional>
 #include <thread>
 
 #include <boost/beast/websocket.hpp>
+
+#include "common/util/log.h"
 
 namespace asio = boost::asio;
 namespace beast = boost::beast;

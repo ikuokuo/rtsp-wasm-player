@@ -14,9 +14,9 @@ extern "C" {
 #endif
 
 #include <boost/asio/buffer.hpp>
-#include <glog/logging.h>
 
-#include <common/util/bytes.h>
+#include "common/util/bytes.h"
+#include "common/util/log.h"
 
 namespace net {
 

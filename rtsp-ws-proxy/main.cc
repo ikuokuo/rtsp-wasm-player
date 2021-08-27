@@ -12,8 +12,6 @@ extern "C" {
 }
 #endif
 
-#include <glog/logging.h>
-
 #include <map>
 #include <vector>
 
@@ -22,6 +20,7 @@ extern "C" {
 #define UTIL_CONFIG_STREAM
 #define UTIL_CONFIG_CORS
 #include "common/util/config.h"
+#include "common/util/log.h"
 
 #include "stream_handler.h"
 #include "stream_player.h"

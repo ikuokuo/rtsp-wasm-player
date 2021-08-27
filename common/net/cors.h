@@ -10,7 +10,7 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 
-#include <glog/logging.h>
+#include "common/util/log.h"
 
 namespace net {
 
