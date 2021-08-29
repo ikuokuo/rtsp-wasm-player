@@ -1,27 +1,33 @@
 const WsClientOptions = {
+  // required on open
   url: null,
+  stream: null,
+
   player: null,
 
   onopen: null,
   onmessage: null,
-  ondata: null,
   onclose: null,
   onerror: null,
 
-  dataHandler: null,
+  ondata: null,
 
-  dbg: true,
+  dbg: false,
   log: console.log,
+  wasm_log_v: 0,
 };
 
 class WsClient {
   #options;
   #ws = null;
+  #decoder = null;
 
   constructor(options) {
     this.#options = { ...WsClientOptions, ...options };
     this.#logd('ws options:')
     this.#logd(this.#options);
+
+    Module.Log.set_v(this.#options.wasm_log_v);
   }
 
   #log(...args) {
@@ -48,6 +54,14 @@ class WsClient {
       this.#log('ws open error: url is null');
       return;
     }
+    if (this.#options.stream == null) {
+      this.#log('ws open error: stream is null');
+      return;
+    }
+
+    this.#decoder = new Module.Decoder();
+    this.#decoder.Open(JSON.stringify(this.#options.stream));
+
     const ws = new WebSocket(this.#options.url);
     ws.binaryType = 'arraybuffer';
     ws.onopen = (e) => this.#onopen(e);
@@ -61,6 +75,8 @@ class WsClient {
     if (this.#ws != null) {
       this.#ws.close();
       this.#ws = null;
+      this.#decoder.delete();
+      this.#decoder = null;
     }
   }
 
@@ -73,15 +89,30 @@ class WsClient {
     this.#logd(`ws message: ${this.#options.url}`);
     this.#options.onmessage && this.#options.onmessage(e);
 
-    let data = e.data;
-    if (this.#options.dataHandler) {
-      data = this.#options.dataHandler(data);
+    let data = new Uint8Array(e.data);
+    if (this.#decoder) {
+      const buf = Module._malloc(data.length);
+      try {
+        Module.HEAPU8.set(data, buf);
+        const frame = this.#decoder.Decode(buf, data.length);
+        if (frame != null) {
+          this.#logd(`ws frame size=${frame.width}x${frame.height}`);
+          frame.bytes = new Uint8Array(Module.HEAPU8.buffer, frame.data, frame.size);
+          this.#logd(frame);
+          if (this.#options.player) {
+            this.#options.player.render(frame);
+          }
+          this.#options.ondata && this.#options.ondata(frame);
+          frame.delete();
+        } else {
+          this.#logd("ws frame error: decode fail");
+        }
+      } finally {
+        Module._free(buf);
+      }
+    } else {
+      this.#options.ondata && this.#options.ondata(data);
     }
-    if (this.#options.player) {
-      this.#options.player.render();
-    }
-    this.#logd(data);
-    this.#options.ondata && this.#options.ondata(data);
   }
 
   #onclose(e) {

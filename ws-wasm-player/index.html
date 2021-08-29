@@ -117,10 +117,11 @@
         </pre>
       </div>
       <div>
-        <canvas id="canvas" width="640" height="480"></canvas>
+        <canvas id="canvas"></canvas>
       </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin></script>
+    <script src="lib/decoder.js"></script>
     <script src="lib/webgl.js"></script>
     <script src="lib/ws_client.js"></script>
     <script>
@@ -137,8 +138,11 @@
         }
       };
 
-      $(function() {
-        const client = new WsClient();
+      Module.onRuntimeInitialized = function() { $(function() {
+        const client = new WsClient({
+          // dbg: true,
+          // wasm_log_v: 2,
+        });
 
         // input
         const getUrl = (protocol='http') => {
@@ -238,16 +242,22 @@
           if (client.isOpen()) {
             client.close();
           } else {
+            const player = new WebGLPlayer($('#canvas')[0]);
+            if (stream.video) {
+              player.canvas.width = stream.video.codecpar.width;
+              player.canvas.height = stream.video.codecpar.height;
+            }
             client.open({
               url: `${getUrl('ws')}/stream/${stream.id}`,
-              player: new WebGLPlayer($('#canvas')[0]),
+              stream: stream,
+              player: player,
             });
           }
           updateStreamStatus();
         });
         updateStreamStatus();
         getStreamIds();
-      });
+      }); };
 
       const isIp = (s) => {
         if (typeof(s) !== 'string') {

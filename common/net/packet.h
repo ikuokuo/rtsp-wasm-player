@@ -43,9 +43,15 @@ class Data {
 
   std::vector<uint8_t> ToBytes();
   int ToBytes(std::vector<uint8_t> &bytes);
+  int ToBytes(uint8_t *bytes, std::size_t bytes_n) {
+    return ToBytes(bytes, bytes_n, *this);
+  }
 
   int FromBytes(const std::vector<uint8_t> &bytes);
   int FromBytes(const boost::asio::mutable_buffer &bytes);
+  int FromBytes(const uint8_t *bytes, std::size_t bytes_n) {
+    return FromBytes(bytes, bytes_n, *this);
+  }
 
   std::size_t GetByteSize() const;
 

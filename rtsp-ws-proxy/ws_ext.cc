@@ -32,6 +32,7 @@ beast::string_view mime_type(beast::string_view path) {
   if (iequals(ext, ".json")) return "application/json";
   if (iequals(ext, ".xml"))  return "application/xml";
   if (iequals(ext, ".swf"))  return "application/x-shockwave-flash";
+  if (iequals(ext, ".wasm")) return "application/wasm";
   if (iequals(ext, ".flv"))  return "video/x-flv";
   if (iequals(ext, ".png"))  return "image/png";
   if (iequals(ext, ".jpe"))  return "image/jpeg";

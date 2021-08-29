@@ -16,8 +16,9 @@ class Texture {
     gl.uniform1i(gl.getUniformLocation(program, name), n);
   }
 
-  fill(width, height, data, format=gl.GL_RED) {
+  fill(width, height, data, format) {
     const gl = this.gl;
+    format = format || gl.LUMINANCE;
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, format, width, height, 0, format,
                   gl.UNSIGNED_BYTE, data);
@@ -28,10 +29,10 @@ class WebGLPlayer {
   constructor(canvas) {
     this.canvas = canvas;
     this.gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-    this._init();
+    this.#init();
   }
 
-  _init() {
+  #init() {
     if (!this.gl) {
       console.log("[ERROR] WebGL not supported");
       return;
@@ -75,13 +76,13 @@ class WebGLPlayer {
       "             0,             0,             0,             1",
       ");",
       "void main(void) {",
-      "  gl_FragColor = vec4(vTexCoord.x, vTexCoord.y, 0., 1.0);",
-      "  // gl_FragColor = vec4(",
-      "  //   texture(yTex, vTexCoord).x,",
-      "  //   texture(uTex, vTexCoord).x,",
-      "  //   texture(vTex, vTexCoord).x,",
-      "  //   1",
-      "  // ) * YUV2RGB;",
+      "  // gl_FragColor = vec4(vTexCoord.x, vTexCoord.y, 0., 1.0);",
+      "  gl_FragColor = vec4(",
+      "    texture2D(yTex, vTexCoord).x,",
+      "    texture2D(uTex, vTexCoord).x,",
+      "    texture2D(vTex, vTexCoord).x,",
+      "    1",
+      "  ) * YUV2RGB;",
       "}",
     ].join("\n");
     const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
@@ -130,7 +131,7 @@ class WebGLPlayer {
     gl.v.bind(2, program, "vTex");
   }
 
-  render() {
+  render(frame) {
     if (!this.gl) {
       console.log("[ERROR] Render failed due to WebGL not supported");
       return;
@@ -140,6 +141,20 @@ class WebGLPlayer {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
+
+    {
+      const width = frame.width;
+      const height = frame.height;
+      const bytes = frame.bytes;
+
+      const len_y = width * height;
+      const len_u = len_y >> 2;
+      const len_uv = len_y >> 1;
+
+      gl.y.fill(width, height, bytes.subarray(0, len_y));
+      gl.u.fill(width >> 1, height >> 1, bytes.subarray(len_y, len_y+len_u));
+      gl.v.fill(width >> 1, height >> 1, bytes.subarray(len_y+len_u, len_y+len_uv));
+    }
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
