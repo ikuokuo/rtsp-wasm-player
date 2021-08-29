@@ -1,7 +1,9 @@
 #pragma once
 
-#include <string>
+#include <iomanip>
 #include <memory>
+#include <sstream>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -9,6 +11,7 @@
 extern "C" {
 #endif
 
+#include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 
 #ifdef __cplusplus
@@ -246,6 +249,29 @@ struct adl_serializer<net::stream_sub_info_p> {
 };
 
 template <>
+struct adl_serializer<net::stream_info_t> {
+  static void to_json(json &j, const net::stream_info_t &i) {
+    (void)j;
+    (void)i;
+  }
+
+  static void from_json(const json &j, net::stream_info_t &info) {
+    j.at("id").get_to(info.id);
+    for (int t_i = AVMEDIA_TYPE_UNKNOWN,
+             t_end = AVMEDIA_TYPE_NB; t_i <= t_end; ++t_i) {
+      auto t = static_cast<AVMediaType>(t_i);
+      auto t_s = av_get_media_type_string(t);
+      if (!t_s) continue;
+      if (j.contains(t_s)) {
+        auto sub_info = std::make_shared<net::stream_sub_info_t>();
+        j.at(t_s).get_to(sub_info);
+        info.subs[t] = sub_info;
+      }
+    }
+  }
+};
+
+template <>
 struct adl_serializer<net::stream_infos_t> {
   static void to_json(json &j, const net::stream_infos_t &i) {
     (void)j;
@@ -255,18 +281,7 @@ struct adl_serializer<net::stream_infos_t> {
   static void from_json(const json &j, net::stream_infos_t &i) {
     for (auto &&j_info : j) {
       net::stream_info_t info;
-      j_info.at("id").get_to(info.id);
-      for (int t_i = AVMEDIA_TYPE_UNKNOWN,
-               t_end = AVMEDIA_TYPE_NB; t_i <= t_end; ++t_i) {
-        auto t = static_cast<AVMediaType>(t_i);
-        auto t_s = av_get_media_type_string(t);
-        if (!t_s) continue;
-        if (j_info.contains(t_s)) {
-          auto sub_info = std::make_shared<net::stream_sub_info_t>();
-          j_info.at(t_s).get_to(sub_info);
-          info.subs[t] = sub_info;
-        }
-      }
+      j_info.get_to(info);
       i.push_back(info);
     }
   }
@@ -277,10 +292,18 @@ struct adl_serializer<net::stream_infos_t> {
 namespace net {
 
 inline
-stream_infos_t to_stream_infos(const std::string &s) {
+stream_info_t to_stream_info(const std::string &s) {
+  stream_info_t info;
+  json::parse(s).get_to(info);
+  return info;
+}
+
+inline
+stream_infos_t to_stream_infos(const std::string &s,
+                               const std::string &key = "streams") {
   auto j = json::parse(s);
   stream_infos_t infos;
-  j.at("streams").get_to(infos);
+  j.at(key).get_to(infos);
   return infos;
 }
 
