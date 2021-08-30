@@ -166,7 +166,7 @@ void WsServer::DoListen(
     if (ec) {
       OnFail(ec, "accept");
     } else {
-      if (options_.http_enable) {
+      if (options_.http.enable) {
         asio::spawn(acceptor.get_executor(), std::bind(
             &WsServer::DoSessionHTTP,
             this,
@@ -234,7 +234,7 @@ void WsServer::DoSessionHTTP(
     // LOG(INFO) << "http req: " << http_req.target();
     auto handled = OnHandleHttpRequest(http_req, lambda);
     if (!handled) {
-      ws_ext::handle_request(options_.http_doc_root,
+      ws_ext::handle_request(options_.http.doc_root,
                              std::move(http_req), lambda);
       if (ec) return OnFail(ec, "write");
     }

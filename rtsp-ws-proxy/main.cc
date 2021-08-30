@@ -102,25 +102,39 @@ int LoadConfig(const std::string &path, Config *config) {
     auto node = YAML::LoadFile(path);
     config::InitGoogleLoggingFlags(node["log"]);
 
-    auto node_server = node["server"];
-    if (node_server) {
+    if (node["server"]) {
+      auto node_server = node["server"];
       if (node_server["addr"])
         options.addr = node_server["addr"].as<std::string>();
       if (node_server["port"])
         options.port = node_server["port"].as<int>();
       if (node_server["threads"])
         options.threads = node_server["threads"].as<int>();
-      if (node_server["http_enable"])
-        options.http_enable = node_server["http_enable"].as<bool>();
-      if (node_server["http_doc_root"])
-        options.http_doc_root = node_server["http_doc_root"].as<std::string>();
+
+      if (node_server["http"]) {
+        auto node_http = node_server["http"];
+        if (node_http["enable"])
+          options.http.enable = node_http["enable"].as<bool>();
+        if (node_http["doc_root"])
+          options.http.doc_root = node_http["doc_root"].as<std::string>();
+      }
 
       if (node_server["cors"])
         options.cors = node_server["cors"].as<net::Options>();
+
+      if (node_server["stream"]) {
+        auto node_stream = node_server["stream"];
+        if (node_stream["http_target"])
+          options.stream.http_target =
+              node_stream["http_target"].as<std::string>();
+        if (node_stream["ws_target_prefix"])
+          options.stream.ws_target_prefix =
+              node_stream["ws_target_prefix"].as<std::string>();
+      }
     }
 
-    auto node_streams = node["streams"];
-    if (node_streams) {
+    if (node["streams"]) {
+      auto node_streams = node["streams"];
       for (auto it = node_streams.begin(); it != node_streams.end(); ++it) {
         auto id = (*it)["id"].as<std::string>();
         stream_options[id] = it->as<StreamOptions>();

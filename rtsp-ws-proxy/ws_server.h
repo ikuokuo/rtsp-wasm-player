@@ -17,13 +17,20 @@ struct WsServerOptions {
   int port          = 8080;
   int threads       = 3;
 
-  bool http_enable          = true;
-  // Notice
-  //  "": deny access the filesystem
-  //  "/", "//": will access the filesystem root
-  std::string http_doc_root = ".";
+  struct HTTP {
+    bool enable          = true;
+    // Notice
+    //  "": deny access the filesystem
+    //  "/", "//": will access the filesystem root
+    std::string doc_root = ".";
+  } http{};
 
   net::Options cors{};
+
+  struct Stream {
+    std::string http_target = "/streams";
+    std::string ws_target_prefix = "/stream/";
+  } stream{};
 
   bool signal_exit_enable = true;
   bool thread_main_block = true;

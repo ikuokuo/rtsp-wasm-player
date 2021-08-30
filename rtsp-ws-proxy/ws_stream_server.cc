@@ -55,7 +55,7 @@ bool WsStreamServer::OnHandleHttpRequest(
   (void)send;
 
   auto target = req.target();
-  if (target == "/streams") {
+  if (target == options_.stream.http_target) {
     LOG(INFO) << "http req: " << target;
     http::response<http::string_body> res{
         http::status::ok, req.version()};
@@ -84,12 +84,12 @@ bool WsStreamServer::OnHandleWebSocket(
 
   auto req = http_req.get();
   auto target = req.target();
-  if (!target.starts_with("/stream/")) {
+  if (!target.starts_with(options_.stream.ws_target_prefix)) {
     LOG(ERROR) << "ws stream denied: " << target;
     return true;
   }
 
-  static auto stream_path_len = std::string("/stream/").size();
+  static auto stream_path_len = options_.stream.ws_target_prefix.size();
   auto stream_id = std::string(target.substr(stream_path_len));
   LOG(INFO) << "ws stream granted, id=" << stream_id;
   LOG(INFO) << " client, ip=" << ws.next_layer().socket().remote_endpoint();

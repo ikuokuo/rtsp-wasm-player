@@ -16,8 +16,10 @@ server:
   addr: "0.0.0.0"
   port: 8080
   threads: 3
-  http_enable: true
-  http_doc_root: "../ws-wasm-player/"
+
+  http:
+    enable: true
+    doc_root: "../ws-wasm-player/"
 
   cors:
     enabled: true
@@ -29,6 +31,10 @@ server:
     exposed_headers:
       - Content-Type
     debug: false
+
+  stream:
+    http_target: "/streams"
+    ws_target_prefix: "/stream/"
 
 streams:
   -
