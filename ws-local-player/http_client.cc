@@ -2,11 +2,6 @@
 
 #include <boost/beast/version.hpp>
 
-namespace asio = boost::asio;
-namespace beast = boost::beast;
-namespace http = beast::http;
-using tcp = boost::asio::ip::tcp;
-
 HttpClient::HttpClient(const HttpClientOptions &options)
   : options_(options), run_response_cb_(nullptr) {
 }
@@ -21,7 +16,7 @@ void HttpClient::Run(on_response_t cb) {
   asio::io_context ioc;
 
   // Launch the asynchronous operation
-  boost::asio::spawn(ioc, std::bind(
+  asio::spawn(ioc, std::bind(
       &HttpClient::DoSession,
       this,
       std::ref(ioc),
@@ -32,15 +27,13 @@ void HttpClient::Run(on_response_t cb) {
   ioc.run();
 }
 
-void HttpClient::OnFail(boost::beast::error_code ec, char const *what) {
+void HttpClient::OnFail(beast::error_code ec, char const *what) {
   if (options_.on_fail) {
     options_.on_fail(ec, what);
   }
 }
 
-void HttpClient::DoSession(
-    boost::asio::io_context &ioc,  // NOLINT
-    boost::asio::yield_context yield) {
+void HttpClient::DoSession(asio::io_context &ioc, asio::yield_context yield) {
   beast::error_code ec;
 
   // These objects perform our I/O

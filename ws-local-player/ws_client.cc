@@ -4,14 +4,7 @@
 #include <functional>
 #include <thread>
 
-#include <boost/beast/websocket.hpp>
-
 #include "common/util/log.h"
-
-namespace asio = boost::asio;
-namespace beast = boost::beast;
-namespace http = beast::http;
-namespace websocket = beast::websocket;
 
 WsClient::WsClient(const WsClientOptions &options)
   : options_(options) {

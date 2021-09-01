@@ -77,7 +77,7 @@ int main(int argc, char const *argv[]) {
 
   {
     http_options.on_fail = [&http_mutex, &http_cond, &http_fail](
-        boost::beast::error_code ec, char const *what) {
+        beast::error_code ec, char const *what) {
       LOG(ERROR) << what << ": " << ec.message();
       std::unique_lock<std::mutex> lock(http_mutex);
       http_fail = true;
@@ -89,12 +89,12 @@ int main(int argc, char const *argv[]) {
         [&http_mutex, &http_cond, &http_resp_ok, &stream_infos](
             const HttpClient::response_t &res) {
           VLOG(1) << res;
-          if (res.result() == boost::beast::http::status::ok) {
+          if (res.result() == beast::http::status::ok) {
             std::unique_lock<std::mutex> lock(http_mutex);
             try {
               stream_infos = std::make_shared<net::stream_infos_t>();
               *stream_infos = net::to_stream_infos(
-                  boost::beast::buffers_to_string(res.body().data()));
+                  beast::buffers_to_string(res.body().data()));
               http_resp_ok = true;
             } catch (std::exception &e) {
               LOG(ERROR) << " parse fail, " << e.what();
@@ -131,7 +131,7 @@ int main(int argc, char const *argv[]) {
     auto stream_info = (*stream_infos)[stream_info_index];
 
     ws_options.target = ws_target_prefix + stream_info.id;
-    ws_options.on_fail = [](boost::beast::error_code ec, char const *what) {
+    ws_options.on_fail = [](beast::error_code ec, char const *what) {
       LOG(ERROR) << what << ": " << ec.message();
     };
 

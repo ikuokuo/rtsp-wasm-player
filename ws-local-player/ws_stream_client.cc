@@ -19,8 +19,6 @@ extern "C" {
 #include "common/net/packet.h"
 #include "common/util/log.h"
 
-namespace asio = boost::asio;
-
 namespace client {
 
 class StreamVideoOpContext : public StreamOpContext {
@@ -80,7 +78,7 @@ WsStreamClient::~WsStreamClient() {
 void WsStreamClient::Run() {
   asio::io_context ioc;
 
-  boost::asio::spawn(ioc, std::bind(
+  asio::spawn(ioc, std::bind(
       &WsStreamClient::DoSession,
       this,
       std::ref(ioc),
@@ -120,7 +118,7 @@ void WsStreamClient::Run() {
     t.join();
 }
 
-bool WsStreamClient::OnRead(boost::beast::flat_buffer *buffer) {
+bool WsStreamClient::OnRead(beast::flat_buffer *buffer) {
   net::Data data;
   auto buf = buffer->data();
   data.FromBytes(buf);

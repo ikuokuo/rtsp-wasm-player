@@ -32,7 +32,7 @@ class WsStreamClient : public WsClient {
   void Run() override;
 
  protected:
-  bool OnRead(boost::beast::flat_buffer *buffer) override;
+  bool OnRead(beast::flat_buffer *buffer) override;
 
   StreamInfo info_;
   stream_ops_t ops_;

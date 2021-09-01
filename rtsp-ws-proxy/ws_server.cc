@@ -8,12 +8,6 @@
 
 #include "common/util/log.h"
 
-namespace asio = boost::asio;
-namespace beast = boost::beast;
-namespace http = beast::http;
-namespace websocket = beast::websocket;
-using tcp = boost::asio::ip::tcp;
-
 WsServer::WsServer(const WsServerOptions &options)
   : options_(options) {
 }
@@ -254,9 +248,9 @@ void WsServer::DoSessionHTTP(
 
 // Handles an WebSocket server connection
 void WsServer::DoSessionWebSocket(
-    boost::beast::websocket::stream<boost::beast::tcp_stream> &ws,
+    beast::websocket::stream<beast::tcp_stream> &ws,
     boost::optional<http_req_t> &req,
-    boost::asio::yield_context yield) {
+    asio::yield_context yield) {
   beast::error_code ec;
 
   // Set suggested timeout settings for the websocket

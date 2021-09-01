@@ -16,12 +16,6 @@ extern "C" {
 #include "common/net/json.h"
 #include "common/util/log.h"
 
-namespace asio = boost::asio;
-namespace beast = boost::beast;
-namespace http = beast::http;
-namespace websocket = beast::websocket;
-using tcp = boost::asio::ip::tcp;
-
 WsStreamServer::WsStreamServer(const WsServerOptions &options)
   : WsServer(options),
     cors_(options.cors.enabled
@@ -76,10 +70,10 @@ bool WsStreamServer::OnHandleHttpRequest(
 }
 
 bool WsStreamServer::OnHandleWebSocket(
-    boost::beast::websocket::stream<boost::beast::tcp_stream> &ws,
+    beast::websocket::stream<beast::tcp_stream> &ws,
     boost::optional<http_req_t> &http_req,
-    boost::beast::error_code &ec,
-    boost::asio::yield_context yield) {
+    beast::error_code &ec,
+    asio::yield_context yield) {
   assert(http_req.has_value());
 
   auto req = http_req.get();
@@ -116,11 +110,11 @@ bool WsStreamServer::OnHandleWebSocket(
 }
 
 bool WsStreamServer::SendData(
-    boost::beast::websocket::stream<boost::beast::tcp_stream> &ws,
+    beast::websocket::stream<beast::tcp_stream> &ws,
     const std::string &id,
     const data_p &data,
-    boost::beast::error_code &ec,
-    boost::asio::yield_context yield) {
+    beast::error_code &ec,
+    asio::yield_context yield) {
   VLOG(1) << "Stream[" << id << "] packet size=" << data->packet->size;
 
   ws.binary(true);
