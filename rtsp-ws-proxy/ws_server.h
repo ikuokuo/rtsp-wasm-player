@@ -8,8 +8,7 @@
 #include "common/net/asio.hpp"
 #include "common/net/beast.hpp"
 #include "common/net/cors.h"
-
-#include "ws_ext.h"
+#include "common/net/ext.h"
 
 struct WsServerOptions {
   std::string addr  = "0.0.0.0";
@@ -40,7 +39,7 @@ struct WsServerOptions {
   using on_stop_t = std::function<void()>;
   using on_exit_t = std::function<void()>;
 
-  on_fail_t on_fail = ws_ext::fail;
+  on_fail_t on_fail = nullptr;
   on_stop_t on_stop = nullptr;
   on_exit_t on_exit = nullptr;
 };
@@ -59,19 +58,6 @@ class WsServer {
  protected:
   virtual void OnFail(beast::error_code ec, char const *what);
 
-  virtual bool OnHandleHttpRequest(
-      http_req_t &req,
-      ws_ext::send_lambda &send);
-
-  virtual bool OnHandleWebSocket(
-      beast::websocket::stream<beast::tcp_stream> &ws,
-      boost::optional<http_req_t> &req,
-      beast::error_code &ec,
-      asio::yield_context yield);
-
-  WsServerOptions options_;
-
- private:
   void DoListen(
       asio::io_context &ioc,
       asio::ip::tcp::endpoint endpoint,
@@ -81,8 +67,13 @@ class WsServer {
       beast::tcp_stream &stream,
       asio::yield_context yield);
 
-  void DoSessionWebSocket(
-      beast::websocket::stream<beast::tcp_stream> &ws,
-      boost::optional<http_req_t> &req,
-      asio::yield_context yield);
+  virtual void DoSessionWebSocket(
+      beast::websocket::stream<beast::tcp_stream> &&ws,
+      boost::optional<http_req_t> &&req);
+
+  virtual bool OnHandleHttpRequest(
+      http_req_t &req,
+      net::send_lambda &send);
+
+  WsServerOptions options_;
 };

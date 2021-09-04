@@ -12,7 +12,6 @@ extern "C" {
 
 #include <algorithm>
 #include <chrono>
-#include <thread>
 #include <vector>
 
 #include "common/media/stream_video.h"
@@ -43,11 +42,14 @@ class StreamVideoOpContext : public StreamOpContext {
 }  // namespace client
 
 WsStreamClient::WsStreamClient(
+    asio::io_context &ioc,
     const WsClientOptions &options,
     const StreamInfo &info,
-    int ui_wait_secs)
-  : WsClient(options), info_(info), ui_wait_secs_(ui_wait_secs),
-    ui_ok_(false), ui_(nullptr) {
+    int ui_wait_secs,
+    std::function<void()> on_ui_exit)
+  : WsClient<std::vector<uint8_t>>(ioc, options),
+    info_(info), ui_wait_secs_(ui_wait_secs), ui_ok_(false), ui_(nullptr),
+    on_ui_exit_(on_ui_exit) {
   if (ui_wait_secs_ <= 0) ui_wait_secs_ = 10;
 
   for (auto &&e : info.subs) {
@@ -70,65 +72,54 @@ WsStreamClient::WsStreamClient(
       break;
     }
   }
+
+  ui_thread_ = std::thread(std::bind(&WsStreamClient::Run, this));
 }
 
 WsStreamClient::~WsStreamClient() {
+  ui_thread_.join();
 }
 
 void WsStreamClient::Run() {
-  asio::io_context ioc;
-
-  asio::spawn(ioc, std::bind(
-      &WsStreamClient::DoSession,
-      this,
-      std::ref(ioc),
-      std::placeholders::_1));
-
-  std::vector<std::thread> v;
-  v.emplace_back([&ioc]() {
-    ioc.run();
-  });
-
-  {
-    int ui_wait_ms = 2000;
-    int n = ui_wait_secs_ * 1000 / ui_wait_ms;
-    while (n--) {
-      std::unique_lock<std::mutex> lock(ui_mutex_);
-      auto ok = ui_cond_.wait_for(lock,
-          std::chrono::milliseconds(ui_wait_ms),
-          [this]() { return ui_ok_; });
-      if (ok) break;
-      LOG_IF(INFO, n) << "Stream[" << info_.id << "] wait ...";
-    }
-    if (ui_ok_) {
-      {
-        std::lock_guard<std::mutex> _(ui_mutex_);
-        ui_ = std::make_shared<GlfwFrame>();
-      }
-      LOG(INFO) << "Stream[" << info_.id << "] ui run";
-      ui_->Run(ui_params_);
-      LOG(INFO) << "Stream[" << info_.id << "] ui over";
-    } else {
-      LOG(WARNING) << "Stream[" << info_.id << "] wait timeout";
-    }
+  int ui_wait_ms = 2000;
+  int n = ui_wait_secs_ * 1000 / ui_wait_ms;
+  while (n--) {
+    std::unique_lock<std::mutex> lock(ui_mutex_);
+    auto ok = ui_cond_.wait_for(lock,
+        std::chrono::milliseconds(ui_wait_ms),
+        [this]() { return ui_ok_; });
+    if (ok) break;
+    LOG_IF(INFO, n) << "Stream[" << info_.id << "] wait ...";
   }
-
-  ioc.stop();
-  for (auto &t : v)
-    t.join();
+  if (ui_ok_) {
+    {
+      std::lock_guard<std::mutex> _(ui_mutex_);
+      ui_ = std::make_shared<GlfwFrame>();
+    }
+    LOG(INFO) << "Stream[" << info_.id << "] ui run";
+    ui_->Run(ui_params_);
+    LOG(INFO) << "Stream[" << info_.id << "] ui over";
+  } else {
+    LOG(WARNING) << "Stream[" << info_.id << "] wait timeout";
+  }
+  if (on_ui_exit_) on_ui_exit_();
 }
 
-bool WsStreamClient::OnRead(beast::flat_buffer *buffer) {
-  net::Data data;
-  auto buf = buffer->data();
-  data.FromBytes(buf);
-  buffer->consume(buf.size());
+void WsStreamClient::OnEventRecv(
+    beast::flat_buffer &buffer, std::size_t bytes_n) {
+  WsClient<std::vector<uint8_t>>::OnEventRecv(buffer, bytes_n);
 
-  VLOG(1) << "packet type=" << data.type << ", size=" << data.packet->size;
+  net::Data data;
+  auto buf = buffer.data();
+  data.FromBytes(buf);
+  buffer.consume(buf.size());
+
+  VLOG(2) << "buf_n=" << buf.size() << ", bytes_n=" << bytes_n
+      << ", type=" << data.type << ", packet_n=" << data.packet->size;
 
   auto op = ops_[data.type];
   auto frame = op->GetFrame(data.packet);
-  if (frame == nullptr) return true;
+  if (frame == nullptr) return;
 
   if (data.type == AVMEDIA_TYPE_VIDEO) {
     VLOG(1) << " [v] frame size=" << frame->width << "x" << frame->height
@@ -143,5 +134,4 @@ bool WsStreamClient::OnRead(beast::flat_buffer *buffer) {
       ui_cond_.notify_one();
     }
   }
-  return true;
 }

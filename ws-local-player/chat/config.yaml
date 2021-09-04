@@ -1,0 +1,14 @@
+log:
+  logtostderr: true
+  alsologtostderr: false
+  colorlogtostderr: true
+  minloglevel: 0
+  v: 2
+  log_prefix: true
+  log_dir: "."
+  max_log_size: 8
+  stop_logging_if_full_disk: true
+
+server:
+  host: 127.0.0.1
+  port: 8080

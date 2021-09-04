@@ -112,9 +112,10 @@ add_executable(rtsp-ws-proxy
   ${MY_COMMON_GL_SRCS}
   ${MY_COMMON_MEDIA_SRCS}
   main.cc
-  ws_ext.cc
   ws_server.cc
+  ws_stream_room.cc
   ws_stream_server.cc
+  ws_stream_session.cc
   stream_handler.cc
   stream_player.cc
 )
@@ -136,3 +137,7 @@ install(TARGETS rtsp-ws-proxy
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
+
+# others
+
+add_subdirectory(chat)

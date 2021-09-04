@@ -57,6 +57,9 @@ int main(int argc, char const *argv[]) {
     return ret;
   }
 
+  config.options.on_fail = [](boost::beast::error_code ec, char const *what) {
+    LOG(ERROR) << what << ": " << ec.message();
+  };
   WsStreamServer server(config.options);
 
   std::vector<std::shared_ptr<StreamHandler>> streams;

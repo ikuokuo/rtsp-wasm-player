@@ -7,22 +7,21 @@
 #include <boost/asio/signal_set.hpp>
 
 #include "common/util/log.h"
+#include "ws_session.h"
 
 WsServer::WsServer(const WsServerOptions &options)
   : options_(options) {
+  VLOG(2) << __func__;
 }
 
 WsServer::~WsServer() {
+  VLOG(2) << __func__;
 }
 
 void WsServer::Run() {
   auto endpoint = tcp::endpoint{
       asio::ip::make_address(options_.addr),
       static_cast<asio::ip::port_type>(options_.port)};
-
-  // ws_ext::run_server(endpoint, options_.threads, options_.doc_root);
-  // return;
-
   // The io_context is required for all I/O
   asio::io_context ioc(options_.threads);
 
@@ -82,54 +81,6 @@ void WsServer::OnFail(beast::error_code ec, char const *what) {
   }
 }
 
-bool WsServer::OnHandleHttpRequest(
-    http_req_t &req,
-    ws_ext::send_lambda &send) {
-  (void)req;
-  (void)send;
-  return false;
-}
-
-bool WsServer::OnHandleWebSocket(
-    beast::websocket::stream<beast::tcp_stream> &ws,
-    boost::optional<http_req_t> &req,
-    beast::error_code &ec,
-    asio::yield_context yield) {
-  (void)req;
-  /*
-  beast::string_view target;
-  if (req.has_value()) {
-    target = req.get().target();
-  }
-  */
-  // Echoes back all received WebSocket messages
-  for (;;) {
-    // This buffer will hold the incoming message
-    beast::flat_buffer buffer;
-
-    // Read a message
-    ws.async_read(buffer, yield[ec]);
-
-    // This indicates that the session was closed
-    if (ec == websocket::error::closed) break;
-
-    if (ec) {
-      OnFail(ec, "read");
-      break;
-    }
-
-    // Echo the message back
-    ws.text(ws.got_text());
-    ws.async_write(buffer.data(), yield[ec]);
-    if (ec) {
-      OnFail(ec, "write");
-      break;
-    }
-  }
-
-  return true;
-}
-
 // Accepts incoming connections and launches the sessions
 void WsServer::DoListen(
     asio::io_context &ioc,
@@ -167,12 +118,9 @@ void WsServer::DoListen(
             beast::tcp_stream(std::move(socket)),
             std::placeholders::_1));
       } else {
-        asio::spawn(acceptor.get_executor(), std::bind(
-            &WsServer::DoSessionWebSocket,
-            this,
+        DoSessionWebSocket(
             websocket::stream<beast::tcp_stream>(std::move(socket)),
-            boost::optional<http_req_t>(boost::none),
-            std::placeholders::_1));
+            boost::optional<http_req_t>(boost::none));
       }
     }
   }
@@ -193,7 +141,7 @@ void WsServer::DoSessionHTTP(
   boost::optional<http::request_parser<http::string_body>> parser;
 
   // This lambda is used to send messages
-  ws_ext::send_lambda lambda{stream, close, ec, yield};
+  net::send_lambda lambda{stream, close, ec, yield};
 
   for (;;) {
     // Construct a new parser for each message
@@ -218,17 +166,17 @@ void WsServer::DoSessionHTTP(
     // See if it is a WebSocket Upgrade
     if (websocket::is_upgrade(http_req)) {
       // LOG(INFO) << "ws req: " << http_req.target();
-      auto ws = websocket::stream<beast::tcp_stream>(
-          std::move(stream.release_socket()));
-      auto req = boost::optional<http_req_t>(http_req);
-      DoSessionWebSocket(ws, req, yield);
+      DoSessionWebSocket(
+          websocket::stream<beast::tcp_stream>(
+              std::move(stream.release_socket())),
+          boost::optional<http_req_t>(http_req));
       return;
     }
 
     // LOG(INFO) << "http req: " << http_req.target();
     auto handled = OnHandleHttpRequest(http_req, lambda);
     if (!handled) {
-      ws_ext::handle_request(options_.http.doc_root,
+      net::handle_request(options_.http.doc_root,
                              std::move(http_req), lambda);
       if (ec) return OnFail(ec, "write");
     }
@@ -246,31 +194,35 @@ void WsServer::DoSessionHTTP(
   // At this point the connection is closed gracefully
 }
 
-// Handles an WebSocket server connection
 void WsServer::DoSessionWebSocket(
-    beast::websocket::stream<beast::tcp_stream> &ws,
-    boost::optional<http_req_t> &req,
-    asio::yield_context yield) {
-  beast::error_code ec;
+    beast::websocket::stream<beast::tcp_stream> &&ws,
+    boost::optional<http_req_t> &&req) {
+  auto s = std::make_shared<WsSession<std::string>>(
+      std::move(ws), std::move(req));
+  s->SetEventCallback(net::NET_EVENT_FAIL,
+      [this](const std::shared_ptr<WsSession<std::string>::event_t> &event) {
+        auto e = std::dynamic_pointer_cast<net::NetFailEvent>(event);
+        OnFail(e->ec, e->what.c_str());
+      });
+  // Echo back all received WebSocket messages
+  s->SetEventCallback(net::NET_EVENT_RECV,
+      [this, w = std::weak_ptr<WsSession<std::string>>(s)](
+          const std::shared_ptr<WsSession<std::string>::event_t> &event) {
+        auto e = std::dynamic_pointer_cast<net::NetRecvEvent>(event);
+        auto buffer = e->buffer;
+        auto bytes_n = e->bytes_n;
+        if (auto s = w.lock())
+          s->Send(std::make_shared<std::string>(
+              beast::buffers_to_string(buffer.data())));
+        buffer.consume(bytes_n);
+      });
+  s->Run();
+}
 
-  // Set suggested timeout settings for the websocket
-  ws.set_option(
-      websocket::stream_base::timeout::suggested(beast::role_type::server));
-
-  // Set a decorator to change the Server of the handshake
-  ws.set_option(websocket::stream_base::decorator(
-      [](websocket::response_type &res) {
-        res.set(http::field::server,
-                std::string(BOOST_BEAST_VERSION_STRING) + " ws-server");
-      }));
-
-  // Accept the websocket handshake
-  if (req.has_value()) {
-    ws.async_accept(req.get(), yield[ec]);
-  } else {
-    ws.async_accept(yield[ec]);
-  }
-  if (ec) return OnFail(ec, "accept");
-
-  OnHandleWebSocket(ws, req, ec, yield);
+bool WsServer::OnHandleHttpRequest(
+    http_req_t &req,
+    net::send_lambda &send) {
+  (void)req;
+  (void)send;
+  return false;
 }

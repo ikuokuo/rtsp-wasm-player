@@ -112,7 +112,6 @@ add_executable(ws-local-player
   ${MY_COMMON_GL_SRCS}
   ${MY_COMMON_MEDIA_SRCS}
   main.cc
-  ws_client.cc
   ws_stream_client.cc
   http_client.cc
 )
@@ -134,3 +133,7 @@ install(TARGETS ws-local-player
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
+
+# others
+
+add_subdirectory(chat)

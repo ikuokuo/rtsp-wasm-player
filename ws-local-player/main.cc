@@ -1,6 +1,8 @@
 #include <condition_variable>
 #include <mutex>
 
+#include <boost/asio/signal_set.hpp>
+
 #include "common/util/config.h"
 #include "http_client.h"
 #include "ws_stream_client.h"
@@ -131,12 +133,26 @@ int main(int argc, char const *argv[]) {
     auto stream_info = (*stream_infos)[stream_info_index];
 
     ws_options.target = ws_target_prefix + stream_info.id;
-    ws_options.on_fail = [](beast::error_code ec, char const *what) {
-      LOG(ERROR) << what << ": " << ec.message();
-    };
 
-    WsStreamClient ws_client(ws_options, stream_info, ui_wait_secs);
-    ws_client.Run();
+    asio::io_context ioc;
+    asio::signal_set signals(ioc, SIGINT, SIGTERM);
+    signals.async_wait([&ioc](beast::error_code const&, int) {
+      ioc.stop();
+    });
+
+    auto ws_client = std::make_shared<WsStreamClient>(
+        ioc, ws_options, stream_info, ui_wait_secs,
+        [&ioc]() {
+          ioc.stop();
+        });
+    ws_client->SetEventCallback(net::NET_EVENT_FAIL,
+        [](const std::shared_ptr<WsStreamClient::event_t> &event) {
+          auto e = std::dynamic_pointer_cast<net::NetFailEvent>(event);
+          LOG(ERROR) << e->what << ": " << e->ec.message();
+        });
+    ws_client->Open();
+
+    ioc.run();
   } else if (http_fail) {
     LOG(ERROR) << "HTTP get fail";
   } else {
