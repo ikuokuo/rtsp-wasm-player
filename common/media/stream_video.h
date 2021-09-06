@@ -38,6 +38,8 @@ class StreamVideoOp : public StreamOp {
 
   SwsContext *sws_ctx_;
   AVFrame *sws_frame_;
+  uint8_t *sws_buf_;
+  int sws_buf_size_;
 };
 
 class StreamVideoOpContext : public StreamOpContext {

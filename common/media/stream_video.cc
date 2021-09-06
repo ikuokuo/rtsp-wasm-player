@@ -22,7 +22,7 @@ StreamVideoOp::StreamVideoOp(
     const StreamVideoOptions &options,
     const std::shared_ptr<StreamOpContext> &context)
   : options_(options), op_ctx_(context), codec_ctx_(nullptr), frame_(nullptr),
-    sws_ctx_(nullptr), sws_frame_(nullptr) {
+    sws_ctx_(nullptr), sws_frame_(nullptr), sws_buf_(nullptr) {
 }
 
 StreamVideoOp::~StreamVideoOp() {
@@ -91,10 +91,16 @@ AVFrame *StreamVideoOp::GetFrame(AVPacket *packet) {
       sws_frame_ = av_frame_alloc();
 
       int bytes_n = av_image_get_buffer_size(pix_fmt, width, height, align);
-      uint8_t *buffer = static_cast<uint8_t *>(
-        av_malloc(bytes_n * sizeof(uint8_t)));
-      av_image_fill_arrays(sws_frame_->data, sws_frame_->linesize, buffer,
-        pix_fmt, width, height, align);
+      if (sws_buf_ != nullptr && sws_buf_size_ != bytes_n) {
+        av_free(sws_buf_);
+        sws_buf_ = nullptr;
+      }
+      if (sws_buf_ == nullptr) {
+        sws_buf_ = static_cast<uint8_t *>(av_malloc(bytes_n * sizeof(uint8_t)));
+        sws_buf_size_ = bytes_n;
+      }
+      av_image_fill_arrays(sws_frame_->data, sws_frame_->linesize, sws_buf_,
+          pix_fmt, width, height, align);
 
       sws_frame_->width = width;
       sws_frame_->height = height;
@@ -128,6 +134,10 @@ void StreamVideoOp::Flush() {
 }
 
 void StreamVideoOp::Free() {
+  if (sws_buf_ != nullptr) {
+    av_free(sws_buf_);
+    sws_buf_ = nullptr;
+  }
   if (sws_frame_) {
     av_frame_free(&sws_frame_);
     sws_frame_ = nullptr;
