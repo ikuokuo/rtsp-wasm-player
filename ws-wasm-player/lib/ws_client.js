@@ -73,10 +73,12 @@ class WsClient {
 
   close() {
     if (this.#ws != null) {
+      this.#logd('ws close');
       this.#ws.close();
       this.#ws = null;
       this.#decoder.delete();
       this.#decoder = null;
+      this.#options.dbg && Module.DoLeakCheck && Module.DoLeakCheck();
     }
   }
 
@@ -97,8 +99,8 @@ class WsClient {
         const frame = this.#decoder.Decode(buf, data.length);
         if (frame != null) {
           this.#logd(`ws frame size=${frame.width}x${frame.height}`);
-          frame.bytes = new Uint8Array(Module.HEAPU8.buffer, frame.data, frame.size);
-          this.#logd(frame);
+          frame.bytes = frame.getBytes();
+          // frame.bytes = new Uint8Array(Module.HEAPU8.buffer, frame.data, frame.size);
           if (this.#options.player) {
             this.#options.player.render(frame);
           }

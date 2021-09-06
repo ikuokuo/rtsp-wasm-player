@@ -145,7 +145,7 @@ emmake make install
 #  https://emscripten.org/docs/tools_reference/emcc.html
 #  https://github.com/emscripten-core/emscripten/blob/main/src/settings.js
 cd $MY_ROOT/ws-wasm-player
-emcc -s WASM=1 -Os -std=c++14 \
+emcc -std=c++14 -Os -DNDEBUG -s WASM=1 \
 -I . -I .. -I dist/ffmpeg/include \
 -I ../3rdparty/boost/include \
 -I ../3rdparty/json/single_include \
@@ -156,6 +156,12 @@ emcc -s WASM=1 -Os -std=c++14 \
 -D UTIL_LOGGER_ENABLE \
 src/decoder.cc ../common/media/*.cc \
 --bind -o lib/decoder.js
+
+# emcc debugging
+#  https://emscripten.org/docs/debugging/Sanitizers.html
+emcc -std=c++14 -g2 -s WASM=1 \
+-fsanitize=address -s ALLOW_MEMORY_GROWTH=1 \
+...
 ```
 
 <!--

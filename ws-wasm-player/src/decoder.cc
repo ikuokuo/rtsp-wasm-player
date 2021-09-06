@@ -1,4 +1,8 @@
 #include <emscripten/bind.h>
+#include <emscripten/val.h>
+#ifndef NDEBUG
+#include <sanitizer/lsan_interface.h>
+#endif
 
 #include <memory>
 #include <string>
@@ -18,6 +22,8 @@ extern "C" {
 #include "common/net/json.h"
 #include "common/net/packet.h"
 #include "common/util/log.h"
+
+using namespace emscripten;  // NOLINT
 
 struct Log {
   static void set_prefix(bool b) { UTIL_LOG_PREFIX = b; }
@@ -67,6 +73,9 @@ class Frame : public std::enable_shared_from_this<Frame> {
   int size() const {
     return av_image_get_buffer_size(
         AV_PIX_FMT_YUV420P, frame_->width, frame_->height, 1);
+  }
+  val getBytes() {
+    return val(typed_memory_view(size(), frame_->data[0]));
   }
 
  private:
@@ -160,9 +169,11 @@ class Decoder {
   stream_ops_t ops_;
 };
 
-using namespace emscripten;  // NOLINT
-
 EMSCRIPTEN_BINDINGS(decoder) {
+#ifndef NDEBUG
+  function("DoLeakCheck", &__lsan_do_recoverable_leak_check);
+#endif
+
   class_<Log>("Log")
     .class_function("set_prefix", &Log::set_prefix)
     .class_function("set_minlevel", &Log::set_minlevel)
@@ -178,7 +189,8 @@ EMSCRIPTEN_BINDINGS(decoder) {
     .property("height", &Frame::height)
     .property("format", &Frame::format)
     .property("pts", &Frame::pts)
-    .property("size", &Frame::size);
+    .property("size", &Frame::size)
+    .function("getBytes", &Frame::getBytes);
 
   class_<Decoder>("Decoder")
     .constructor<>()
