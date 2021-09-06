@@ -145,6 +145,9 @@ class OpenGLPlayer {
     shader_->Delete();
     glDeleteVertexArrays(1, &vao_);
     glDeleteBuffers(1, &vbo_);
+    texture_y_->Delete();
+    texture_u_->Delete();
+    texture_v_->Delete();
     if (renderer_) {
       SDL_DestroyRenderer(renderer_);
       renderer_ = nullptr;

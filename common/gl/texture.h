@@ -6,8 +6,23 @@ class Texture {
  public:
   GLuint ID = GL_ZERO;
 
-  Texture() {
-    ID = Create();
+  explicit Texture(bool create = true) {
+    if (create) Create();
+  }
+
+  void Create() {
+    GLuint texture_id;
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // set texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    ID = texture_id;
   }
 
   void Bind(GLint n, GLuint program, const GLchar *name) {
@@ -23,18 +38,7 @@ class Texture {
                  GL_UNSIGNED_BYTE, pixels);
   }
 
-  static GLuint Create() {
-    GLuint texture_id;
-    glGenTextures(1, &texture_id);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    // set texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    return texture_id;
+  void Delete() {
+    glDeleteTextures(1, &ID);
   }
 };
