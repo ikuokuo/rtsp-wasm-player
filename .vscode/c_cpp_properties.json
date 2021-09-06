@@ -4,6 +4,11 @@
             "name": "Linux",
             "includePath": [
                 "${env:HOME}/opencv-4/include/opencv4",
+                "${env:EMSDK}/upstream/emscripten/cache/sysroot/include/SDL",
+                "${env:EMSDK}/upstream/emscripten/cache/sysroot/include/compat",
+                "${env:EMSDK}/upstream/emscripten/cache/sysroot/include/c++/v1",
+                "${env:EMSDK}/upstream/lib/clang/14.0.0/include",
+                "${env:EMSDK}/upstream/emscripten/cache/sysroot/include",
                 "${workspaceFolder}/3rdparty/boost/include",
                 "${workspaceFolder}/3rdparty/ffmpeg/include",
                 "${workspaceFolder}/3rdparty/glog/include",

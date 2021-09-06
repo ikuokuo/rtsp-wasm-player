@@ -107,6 +107,17 @@
               <select class="input_select" id="stream_select_id">
               </select>
             </div>
+            <div class="input">
+              <span class="input_label">Player</span>
+              <div class="input_item">
+                <input type="radio" id="webgl" name="player" value="webgl" checked>
+                <label for="webgl">WebGL</label>
+              </div>
+              <div class="input_item">
+                <input type="radio" id="opengl" name="player" value="opengl">
+                <label for="opengl">OpenGL</label>
+              </div>
+            </div>
           </div>
           <div class="card_action">
             <button id="btn_refresh">Refresh</button>
@@ -121,147 +132,164 @@
       </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin></script>
-    <script src="lib/decoder.js"></script>
-    <script src="lib/webgl.js"></script>
-    <script src="lib/ws_client.js"></script>
     <script>
-      let config = new class {
-        streams = undefined;
-        streamSelectId = undefined;
-        getStream() {
-          return this.streams &&
-            this.streams.find((s) => s.id === this.streamSelectId);
-        }
-        resetStreams() {
-          this.streams = undefined;
-          this.streamSelectId = undefined;
-        }
-      };
-
-      Module.onRuntimeInitialized = function() { $(function() {
-        const client = new WsClient({
-          // dbg: true,
-          // wasm_log_v: 2,
-        });
-
-        // input
-        const getUrl = (protocol='http') => {
-          return `${protocol}://${$('#input_host').val()}:${$('#input_port').val()}`;
-        }
-        const updateStreamUrl = () => {
-          $('#stream_url').html(`${getUrl()}/stream/`);
-        };
-        $('#input_host').on('input', function() {
-          if (isIp($(this).val())) {
-            $(this).removeClass('input-error');
-            updateStreamUrl();
-          } else {
-            $(this).addClass('input-error');
-          }
-        });
-        $('#input_port').on('input', function() {
-          if (isPort($(this).val())) {
-            $(this).removeClass('input-error');
-            updateStreamUrl();
-          } else {
-            $(this).addClass('input-error');
-          }
-        });
-        updateStreamUrl();
-
-        // info
-        const updateErrorMessage = (msg, color='red') => {
-          const $card_info = $('.card_info');
-          if (msg === undefined) {
-            $card_info.hide();
-          } else {
-            $card_info.html(msg).css({
-              color: color,
-              display: "block",
-            });
-          }
-        };
-        const updateStreamInfo = (stream = config.getStream()) => {
-          stream && $('#stream_info').html(JSON.stringify(stream, null, 2));
-        };
-
-        // select
-        const updateStreamIds = (streams = config.streams) => {
-          const $select = $('#stream_select_id');
-          $select.empty();
-          streams.forEach(s => {
-            $select.append($('<option>', {
-              text: s.id,
-              value: s.id,
-            }));
+      var Module = {
+        canvas: document.getElementById('canvas'),
+        onRuntimeInitialized: function() { $(function() {
+          const client = new WsClient({
+            // dbg: true,
+            // wasm_log_v: 2,
           });
-          config.streamSelectId = $('#stream_select_id option:first').val();
-          updateStreamInfo();
-        };
-        $('#stream_select_id').change(function() {
-          config.streamSelectId = $(this).val();
-          updateStreamInfo();
-        });
 
-        const resetStreamUi = () => {
-          $('#stream_select_id').empty();
-          $('#stream_info').empty();
-          config.resetStreams();
-        };
+          const config = new class {
+            streams = undefined;
+            streamSelectId = undefined;
+            getStream() {
+              return this.streams &&
+                this.streams.find((s) => s.id === this.streamSelectId);
+            }
+            resetStreams() {
+              this.streams = undefined;
+              this.streamSelectId = undefined;
+            }
+          };
 
-        // action
-        const getStreamIds = () => {
-          $.ajax({
-            url: `${getUrl()}/streams`,
-            method: 'GET',
-            crossDomain: true,
-          })
-          .done(function(data) {
-            if (data && data.hasOwnProperty('streams')) {
-              config.streams = data.streams.sort((a, b) => {
-                if (a.id < b.id) return -1;
-                if (a.id > b.id) return 1;
-                return 0;
-              });
-              updateStreamIds();
-              updateErrorMessage();
-            } else {
-              updateErrorMessage('stream ids get fail, or key not found');
-              resetStreamUi();
-            }
-          })
-          .fail(function() {
-            updateErrorMessage('stream ids get fail');
-            resetStreamUi();
-          })
-        };
-        $('#btn_refresh').click(function() {
-          getStreamIds();
-        });
-        const updateStreamStatus = () => {
-          $('#btn_open').html(client.isOpen() ? 'Close' : 'Open')
-        };
-        $('#btn_open').click(function() {
-          const stream = config.getStream();
-          if (client.isOpen()) {
-            client.close();
-          } else {
-            const player = new WebGLPlayer($('#canvas')[0]);
-            if (stream.video) {
-              player.canvas.width = stream.video.codecpar.width;
-              player.canvas.height = stream.video.codecpar.height;
-            }
-            client.open({
-              url: `${getUrl('ws')}/stream/${stream.id}`,
-              stream: stream,
-              player: player,
-            });
+          let gl_player = null;
+
+          // input
+          const getUrl = (protocol='http') => {
+            return `${protocol}://${$('#input_host').val()}:${$('#input_port').val()}`;
           }
+          const updateStreamUrl = () => {
+            $('#stream_url').html(`${getUrl()}/stream/`);
+          };
+          $('#input_host').on('input', function() {
+            if (isIp($(this).val())) {
+              $(this).removeClass('input-error');
+              updateStreamUrl();
+            } else {
+              $(this).addClass('input-error');
+            }
+          });
+          $('#input_port').on('input', function() {
+            if (isPort($(this).val())) {
+              $(this).removeClass('input-error');
+              updateStreamUrl();
+            } else {
+              $(this).addClass('input-error');
+            }
+          });
+          updateStreamUrl();
+
+          // info
+          const updateErrorMessage = (msg, color='red') => {
+            const $card_info = $('.card_info');
+            if (msg === undefined) {
+              $card_info.hide();
+            } else {
+              $card_info.html(msg).css({
+                color: color,
+                display: "block",
+              });
+            }
+          };
+          const updateStreamInfo = (stream = config.getStream()) => {
+            stream && $('#stream_info').html(JSON.stringify(stream, null, 2));
+          };
+
+          // select
+          const updateStreamIds = (streams = config.streams) => {
+            const $select = $('#stream_select_id');
+            $select.empty();
+            streams.forEach(s => {
+              $select.append($('<option>', {
+                text: s.id,
+                value: s.id,
+              }));
+            });
+            config.streamSelectId = $('#stream_select_id option:first').val();
+            updateStreamInfo();
+          };
+          $('#stream_select_id').change(function() {
+            config.streamSelectId = $(this).val();
+            updateStreamInfo();
+          });
+
+          const resetStreamUi = () => {
+            $('#stream_select_id').empty();
+            $('#stream_info').empty();
+            config.resetStreams();
+          };
+
+          // action
+          const getStreamIds = () => {
+            $.ajax({
+              url: `${getUrl()}/streams`,
+              method: 'GET',
+              crossDomain: true,
+            })
+            .done(function(data) {
+              if (data && data.hasOwnProperty('streams')) {
+                config.streams = data.streams.sort((a, b) => {
+                  if (a.id < b.id) return -1;
+                  if (a.id > b.id) return 1;
+                  return 0;
+                });
+                updateStreamIds();
+                updateErrorMessage();
+              } else {
+                updateErrorMessage('stream ids get fail, or key not found');
+                resetStreamUi();
+              }
+            })
+            .fail(function() {
+              updateErrorMessage('stream ids get fail');
+              resetStreamUi();
+            })
+          };
+          $('#btn_refresh').click(function() {
+            getStreamIds();
+          });
+          const updateStreamStatus = () => {
+            $('#btn_open').html(client.isOpen() ? 'Close' : 'Open')
+          };
+          $('#btn_open').click(function() {
+            const stream = config.getStream();
+            if (client.isOpen()) {
+              if (gl_player != null) {
+                gl_player.delete();
+                gl_player = null;
+              }
+              client.close();
+            } else {
+              let player;
+              const player_name = $('input[name="player"]:checked').val();
+              if (player_name === "webgl") {
+                const canvas = $('#canvas')[0];
+                if (stream.video) {
+                  canvas.width = stream.video.codecpar.width;
+                  canvas.height = stream.video.codecpar.height;
+                }
+                player = new WebGLPlayer(canvas);
+              } else if (player_name === "opengl") {
+                player = WsClient.createOpenGLPlayer();
+                gl_player = player;
+              } else {
+                alert("unknown player");
+                return;
+              }
+              client.open({
+                url: `${getUrl('ws')}/stream/${stream.id}`,
+                stream: stream,
+                player: player,
+              });
+            }
+            updateStreamStatus();
+          });
           updateStreamStatus();
-        });
-        updateStreamStatus();
-        getStreamIds();
-      }); };
+          getStreamIds();
+        }); },
+      };
 
       const isIp = (s) => {
         if (typeof(s) !== 'string') {
@@ -287,5 +315,8 @@
         return n >= 0 && n <= 65535;
       }
     </script>
+    <script src="lib/decoder.js"></script>
+    <script src="lib/webgl.js"></script>
+    <script src="lib/ws_client.js"></script>
   </body>
 </html>

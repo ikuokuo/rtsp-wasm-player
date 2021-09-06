@@ -17,6 +17,8 @@ WebSocket > Packets > FFmpeg decode to YUV > OpenGL display
 RTSP/Webcam/File > FFmpeg open and decode to BGR/YUV > OpenCV/OpenGL display
 ```
 
+![](ws-wasm-player/screenshot.png)
+
 ## Usage
 
 ### Prerequisites
@@ -145,21 +147,22 @@ emmake make install
 #  https://emscripten.org/docs/tools_reference/emcc.html
 #  https://github.com/emscripten-core/emscripten/blob/main/src/settings.js
 cd $MY_ROOT/ws-wasm-player
-emcc -std=c++14 -Os -DNDEBUG -s WASM=1 \
+emcc -std=c++14 -Os -DNDEBUG -s WASM=1 -s USE_SDL=2 -v \
 -I . -I .. -I dist/ffmpeg/include \
 -I ../3rdparty/boost/include \
 -I ../3rdparty/json/single_include \
+-I ../3rdparty/glm \
 -L dist/ffmpeg/lib \
 -lavcodec -lavdevice -lavfilter -lavformat \
 -lavutil -lpostproc -lswresample -lswscale \
 -D UTIL_LOG_TAG=\"WASM\" \
 -D UTIL_LOGGER_ENABLE \
-src/decoder.cc ../common/media/*.cc \
+src/main.cc ../common/media/*.cc \
 --bind -o lib/decoder.js
 
 # emcc debugging
 #  https://emscripten.org/docs/debugging/Sanitizers.html
-emcc -std=c++14 -g2 -s WASM=1 \
+emcc -std=c++14 -g2 -s WASM=1 -s USE_SDL=2 -v \
 -fsanitize=address -s ALLOW_MEMORY_GROWTH=1 \
 ...
 ```
@@ -169,9 +172,22 @@ wasm-ld: error: unknown file type: *.o
   make clean
 sws_getContext, Fatal: error in validating wasm2js output
   WASM=1
+
+emcc -std=c++14 -Os -DNDEBUG -s WASM=0 -s USE_SDL=2 \
+-s MODULARIZE=1 -s EXPORT_NAME=\"'ModuleGL'\" \
 -->
 
 ### Build
+
+```bash
+cd rtsp-wasm-player
+# build all projects in rootdir
+make
+# clean in rootdir
+make clean
+# clean all, include subdirs
+make cleanall
+```
 
 #### RTSP WebSocket Proxy
 

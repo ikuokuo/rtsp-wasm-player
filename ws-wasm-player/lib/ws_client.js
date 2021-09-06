@@ -30,6 +30,10 @@ class WsClient {
     Module.Log.set_v(this.#options.wasm_log_v);
   }
 
+  static createOpenGLPlayer() {
+    return new Module.OpenGLPlayer();
+  }
+
   #log(...args) {
     this.#options.log(...args);
   }
@@ -60,7 +64,7 @@ class WsClient {
     }
 
     this.#decoder = new Module.Decoder();
-    this.#decoder.Open(JSON.stringify(this.#options.stream));
+    this.#decoder.open(JSON.stringify(this.#options.stream));
 
     const ws = new WebSocket(this.#options.url);
     ws.binaryType = 'arraybuffer';
@@ -97,13 +101,16 @@ class WsClient {
       const buf = Module._malloc(data.length);
       try {
         Module.HEAPU8.set(data, buf);
-        const frame = this.#decoder.Decode(buf, data.length);
+        const frame = this.#decoder.decode(buf, data.length);
         if (frame != null) {
           this.#logd(`ws frame size=${frame.width}x${frame.height}`);
-          frame.bytes = frame.getBytes();
-          // frame.bytes = new Uint8Array(Module.HEAPU8.buffer, frame.data, frame.size);
-          if (this.#options.player) {
-            this.#options.player.render(frame);
+          const player = this.#options.player;
+          if (player) {
+            if (player instanceof WebGLPlayer) {
+              frame.bytes = frame.getBytes();
+              // frame.bytes = new Uint8Array(Module.HEAPU8.buffer, frame.data, frame.size);
+            }
+            player.render(frame);
           }
           this.#options.ondata && this.#options.ondata(frame);
           frame.delete();
