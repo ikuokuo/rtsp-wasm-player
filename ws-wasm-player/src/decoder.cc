@@ -147,14 +147,14 @@ class Decoder {
 
     net::Data data;
     data.FromBytes(buf, buf_size);
-    VLOG(1) << " packet type=" << data.type << ", size=" << data.packet->size;
+    VLOG(1) << "decode packet type=" << av_get_media_type_string(data.type)
+        << ", size=" << data.packet->size;
 
     try {
       auto op = ops_[data.type];
       auto frame = op->GetFrame(data.packet);
       if (frame == nullptr) {
-        LOG(ERROR) << "frame get null, type="
-            << av_get_media_type_string(data.type);
+        LOG(WARNING) << "decode frame is null, need new packets";
         return nullptr;
       }
       return std::make_shared<Frame>()->Alloc(data.type, frame);

@@ -93,6 +93,7 @@ class WsClient {
 
     let data = new Uint8Array(e.data);
     if (this.#decoder) {
+      this.#options.dbg && console.time("ws decode");
       const buf = Module._malloc(data.length);
       try {
         Module.HEAPU8.set(data, buf);
@@ -107,11 +108,12 @@ class WsClient {
           this.#options.ondata && this.#options.ondata(frame);
           frame.delete();
         } else {
-          this.#logd("ws frame error: decode fail");
+          this.#logd("ws frame is null: decode error or need new packets");
         }
       } finally {
         Module._free(buf);
       }
+      this.#options.dbg && console.timeEnd("ws decode");
     } else {
       this.#options.ondata && this.#options.ondata(data);
     }
