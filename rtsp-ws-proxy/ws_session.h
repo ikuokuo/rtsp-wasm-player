@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -46,6 +47,7 @@ class WsSession
   beast::flat_buffer read_buffer_;
   std::vector<std::shared_ptr<Data>> send_queue_;
   std::size_t send_queue_max_size_;
+  std::mutex send_mutex_;
 };
 
 template <typename Data>
@@ -139,6 +141,8 @@ void WsSession<Data>::OnRead(
 
 template <typename Data>
 void WsSession<Data>::DoSend(const std::shared_ptr<Data> &data) {
+  std::lock_guard<std::mutex> _(send_mutex_);
+
   // Always add to queue
   send_queue_.push_back(data);
 
@@ -167,6 +171,8 @@ void WsSession<Data>::OnWrite(
   (void)bytes_transferred;
   if (ec)
     return OnEventFail(ec, "write");
+
+  std::lock_guard<std::mutex> _(send_mutex_);
 
   // Remove the sent message from the queue
   send_queue_.erase(send_queue_.begin());
