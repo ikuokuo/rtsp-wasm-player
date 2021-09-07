@@ -56,7 +56,8 @@ streams:
     framerate: 20
     pixel_format: "yuyv422"
 
-stream_get_frequency: 50
+# 25 = 1000 / 40 fps
+stream_get_frequency: 25
 
 # test only: multithreading glfw not coding stable now
 stream_ui_enable: false
