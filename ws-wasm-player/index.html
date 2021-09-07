@@ -156,6 +156,11 @@
 
           let gl_player = null;
 
+          // fill
+          const url = new URL(window.location.href);
+          isIp(url.hostname) && $('#input_host').val(url.hostname);
+          isPort(url.port) && $('#input_port').val(url.port);
+
           // input
           const getUrl = (protocol='http') => {
             return `${protocol}://${$('#input_host').val()}:${$('#input_port').val()}`;
