@@ -13,7 +13,7 @@ WsStreamSession::WsStreamSession(
     boost::optional<http_req_t> &&req,
     std::string id,
     std::shared_ptr<WsStreamRoom> room)
-  : WsSession(std::move(ws), std::move(req)),
+  : WsSession(std::move(ws), std::move(req), 1),
     id_(std::move(id)), room_(std::move(room)) {
   auto ep = ws_.next_layer().socket().remote_endpoint();
   who_ = boost::lexical_cast<std::string>(ep);

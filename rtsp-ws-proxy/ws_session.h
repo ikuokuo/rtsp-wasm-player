@@ -23,7 +23,8 @@ class WsSession
       beast::http::basic_fields<std::allocator<char>>>;
   using virtual_enable_shared_from_this<WsSession<Data>>::shared_from_this;
 
-  WsSession(ws_stream_t &&ws, boost::optional<http_req_t> &&req);
+  WsSession(ws_stream_t &&ws, boost::optional<http_req_t> &&req,
+      std::size_t send_queue_max_size = 5);
   virtual ~WsSession();
 
   void Run();
@@ -44,11 +45,14 @@ class WsSession
 
   beast::flat_buffer read_buffer_;
   std::vector<std::shared_ptr<Data>> send_queue_;
+  std::size_t send_queue_max_size_;
 };
 
 template <typename Data>
-WsSession<Data>::WsSession(ws_stream_t &&ws, boost::optional<http_req_t> &&req)
-  : ws_(std::move(ws)), req_(std::move(req)) {
+WsSession<Data>::WsSession(ws_stream_t &&ws, boost::optional<http_req_t> &&req,
+    std::size_t send_queue_max_size)
+  : ws_(std::move(ws)), req_(std::move(req)),
+    send_queue_max_size_(send_queue_max_size) {
   VLOG(2) << __func__;
 }
 
@@ -164,8 +168,15 @@ void WsSession<Data>::OnWrite(
   if (ec)
     return OnEventFail(ec, "write");
 
-  // Remove the string from the queue
+  // Remove the sent message from the queue
   send_queue_.erase(send_queue_.begin());
+
+  if (send_queue_max_size_ > 0 && send_queue_.size() > send_queue_max_size_) {
+    VLOG(1) << "WsSession send queue size > " << send_queue_max_size_
+        << ", erase eldest ones";
+    send_queue_.erase(send_queue_.begin(),
+      send_queue_.end() - send_queue_max_size_);
+  }
 
   // Send the next message if any
   if (!send_queue_.empty())
