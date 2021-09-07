@@ -146,8 +146,11 @@ emmake make install
 # emcc settings
 #  https://emscripten.org/docs/tools_reference/emcc.html
 #  https://github.com/emscripten-core/emscripten/blob/main/src/settings.js
+# INITIAL_MEMORY=33554432 (32M)
+#  h264 1920x1080 will abort(OOM) directly if default
 cd $MY_ROOT/ws-wasm-player
 emcc -std=c++14 -Os -DNDEBUG -s WASM=1 -s USE_SDL=2 -v \
+-s INITIAL_MEMORY=33554432 \
 -I . -I .. -I dist/ffmpeg/include \
 -I ../3rdparty/boost/include \
 -I ../3rdparty/json/single_include \
