@@ -266,3 +266,8 @@ make
 #  or
 ./_output/bin/rtsp-local-player_ocv ./cfg_webcam.yaml
 ```
+
+## 相关文章
+
+- [FFmpeg 播放 RTSP/Webcam 流](https://mp.weixin.qq.com/s/DKCm0AkNeC3BlH3r-aWDZw)
+- [RTSP H264/HEVC 流 Wasm 播放](https://mp.weixin.qq.com/s/D8Vg3TbBn97LOX6muYYX9A)
