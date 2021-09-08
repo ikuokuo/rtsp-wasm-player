@@ -41,22 +41,33 @@ struct StreamOptions {
   //  v4l2: /dev/video0, ...
   std::string input_url;
 
-  // avdevice options, only for webcam
+  /**
+   * avdevice options, only for webcam
+   * @see avdevice/v4l2.c
+   */
   std::string input_format;  // v4l2, ...
   int width     = 0;  // set if > 0
   int height    = 0;  // set if > 0
   int framerate = 0;  // set if > 0
   AVPixelFormat pixel_format = AV_PIX_FMT_NONE;  // set if != NONE
 
-  // avformat options
   /**
-   * max memory used for buffering real-time frames, set if > 0
-   *
-   * if webcam: value = width * height * framerate(15 if not set) * 2(bpp, bytes per pixel)
-   *
+   * avformat options
    * @see libavformat/options_table.h
    */
-  int64_t rtbufsize = 0;
+  // max memory used for buffering real-time frames, set if > 0
+  // if webcam: value = width * height * framerate(15 if not set) * 2(bpp, bytes per pixel)
+  int rtbufsize = 0;
+  // maximum muxing or demuxing delay in microseconds, set if > 0
+  int max_delay = 0;
+  /**
+   * avformat rtsp options
+   * @see libavformat/rtsp.h
+   */
+  // set RTSP transport protocols: udp, tcp
+  std::string rtsp_transport;
+  // set timeout (in microseconds) of socket TCP I/O operations, set if > 0
+  int stimeout = 0;
 
   // video options
   StreamVideoOptions video;

@@ -118,6 +118,10 @@ struct convert<StreamOptions> {
     node["pixel_format"] = PixelFormatToString(opts.pixel_format);
 
     node["rtbufsize"] = opts.rtbufsize;
+    node["max_delay"] = opts.max_delay;
+
+    node["rtsp_transport"] = opts.rtsp_transport;
+    node["stimeout"] = opts.stimeout;
 
     node["video"] = opts.video;
     return node;
@@ -145,6 +149,13 @@ struct convert<StreamOptions> {
 
     if (node["rtbufsize"])
       opts.rtbufsize = node["rtbufsize"].as<int>();
+    if (node["max_delay"])
+      opts.max_delay = node["max_delay"].as<int>();
+
+    if (node["rtsp_transport"])
+      opts.rtsp_transport = node["rtsp_transport"].as<std::string>();
+    if (node["stimeout"])
+      opts.stimeout = node["stimeout"].as<int>();
 
     if (node["video"])
       opts.video = node["video"].as<StreamVideoOptions>();

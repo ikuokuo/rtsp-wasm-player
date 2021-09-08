@@ -56,7 +56,7 @@ void Stream::Open(const StreamOptions &options) {
   if (options.method == STREAM_METHOD_WEBCAM) {
     input_fmt = av_find_input_format(options.input_format.c_str());
     if (input_fmt == nullptr) {
-      throw_error<StreamError>() << "Input format not found: "
+      throw_error<StreamError>() << "Options input_format not found: "
         << options.input_format;
     }
 
@@ -84,9 +84,22 @@ void Stream::Open(const StreamOptions &options) {
       av_dict_set_int(&input_opt, "rtbufsize", rtbufsize, 0);
     }
   }
+  if (options.max_delay > 0) {
+    av_dict_set_int(&input_opt, "max_delay", options.max_delay, 0);
+  }
 
-  // av_dict_set(&input_opt, "stimeout", "3000000", 0);  // 3 secs
-
+  if (!options.rtsp_transport.empty()) {
+    if (options.rtsp_transport == "udp" || options.rtsp_transport == "tcp") {
+      av_dict_set(&input_opt, "rtsp_transport", options.rtsp_transport.c_str(),
+                  0);
+    } else {
+      throw_error<StreamError>() << "Options rtsp_transport invalid: "
+        << options.rtsp_transport;
+    }
+  }
+  if (options.stimeout > 0) {
+    av_dict_set_int(&input_opt, "stimeout", options.stimeout, 0);
+  }
   // detecting a timeout in ffmpeg
   //  https://stackoverflow.com/a/10666409
   // format_ctx_->interrupt_callback.callback = interrupt_cb;

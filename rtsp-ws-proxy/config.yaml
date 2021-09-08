@@ -45,6 +45,10 @@ streams:
     id: "b"
     method: "network"
     input_url: "rtsp://127.0.0.1:8554/test"
+
+    max_delay: 1000000
+    rtsp_transport: "tcp"
+    stimeout: 5000000
   -
     id: "c"
     method: "webcam"
