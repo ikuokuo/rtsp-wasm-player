@@ -69,6 +69,8 @@ struct StreamOptions {
   // set timeout (in microseconds) of socket TCP I/O operations, set if > 0
   int stimeout = 0;
 
+  bool dump_format = true;
+
   // video options
   StreamVideoOptions video;
 };

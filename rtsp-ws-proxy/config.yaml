@@ -41,6 +41,8 @@ streams:
     id: "a"
     method: "file"
     input_url: "../data/test.mp4"
+
+    dump_format: false
   -
     id: "b"
     method: "network"

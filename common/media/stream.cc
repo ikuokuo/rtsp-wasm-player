@@ -114,7 +114,8 @@ void Stream::Open(const StreamOptions &options) {
   ret = avformat_find_stream_info(format_ctx_, nullptr);
   if (ret < 0) throw StreamError(ret);
 
-  av_dump_format(format_ctx_, 0, options.input_url.c_str(), 0);
+  if (options_.dump_format)
+    av_dump_format(format_ctx_, 0, options.input_url.c_str(), 0);
 
   // stream
 

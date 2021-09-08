@@ -123,6 +123,8 @@ struct convert<StreamOptions> {
     node["rtsp_transport"] = opts.rtsp_transport;
     node["stimeout"] = opts.stimeout;
 
+    node["dump_format"] = opts.dump_format;
+
     node["video"] = opts.video;
     return node;
   }
@@ -156,6 +158,9 @@ struct convert<StreamOptions> {
       opts.rtsp_transport = node["rtsp_transport"].as<std::string>();
     if (node["stimeout"])
       opts.stimeout = node["stimeout"].as<int>();
+
+    if (node["dump_format"])
+      opts.dump_format = node["dump_format"].as<bool>();
 
     if (node["video"])
       opts.video = node["video"].as<StreamVideoOptions>();
