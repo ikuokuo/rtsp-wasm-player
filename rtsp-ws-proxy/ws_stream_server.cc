@@ -37,6 +37,9 @@ void WsStreamServer::Send(
     // need update if stream loop
     stream_map_[id] = stream;
   }
+  // if no sessions, not send data
+  if (room_->Empty(id)) return;
+
   auto data = std::make_shared<std::vector<uint8_t>>();
   net::Data(type, packet).ToBytes(*data);
   room_->Send(id, data);

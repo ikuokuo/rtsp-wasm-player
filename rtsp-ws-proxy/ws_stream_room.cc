@@ -12,6 +12,13 @@ WsStreamRoom::~WsStreamRoom() {
   VLOG(2) << __func__;
 }
 
+bool WsStreamRoom::Empty(const std::string &id) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return sessions_map_[id].empty();
+  // return sessions_map_.find(id) == sessions_map_.end() ||
+  //     sessions_map_[id].empty();
+}
+
 void WsStreamRoom::Join(const std::string &id,
     const std::shared_ptr<WsStreamSession> &session) {
   std::lock_guard<std::mutex> lock(mutex_);

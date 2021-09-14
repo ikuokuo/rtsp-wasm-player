@@ -17,6 +17,8 @@ class WsStreamRoom {
   WsStreamRoom();
   ~WsStreamRoom();
 
+  bool Empty(const std::string &id);
+
   void Join(const std::string &id,
       const std::shared_ptr<WsStreamSession> &session);
   void Leave(const std::string &id,
