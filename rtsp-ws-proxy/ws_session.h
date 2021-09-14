@@ -11,6 +11,7 @@
 #include "common/net/event.h"
 #include "common/util/log.h"
 #include "common/util/ptr.h"
+#include "common/util/times.h"
 
 template <typename Data>
 class WsSession
@@ -48,6 +49,7 @@ class WsSession
   std::vector<std::shared_ptr<Data>> send_queue_;
   std::size_t send_queue_max_size_;
   std::mutex send_mutex_;
+  times::clock::time_point time_write_;
 };
 
 template <typename Data>
@@ -157,6 +159,8 @@ void WsSession<Data>::DoSend(const std::shared_ptr<Data> &data) {
 template <typename Data>
 void WsSession<Data>::DoWrite(const std::shared_ptr<Data> &data) {
   OnEventSend(data);
+  if (VLOG_IS_ON(2))
+    time_write_ = times::now();
   ws_.binary(true);
   ws_.async_write(
       asio::buffer(*data),
@@ -169,6 +173,11 @@ template <typename Data>
 void WsSession<Data>::OnWrite(
     beast::error_code ec, std::size_t bytes_transferred) {
   (void)bytes_transferred;
+
+  VLOG(2) << "WsSession write cost " <<
+      times::count<times::microseconds>(times::now() - time_write_) * 0.001
+      << " ms";
+
   if (ec)
     return OnEventFail(ec, "write");
 
@@ -178,7 +187,8 @@ void WsSession<Data>::OnWrite(
   send_queue_.erase(send_queue_.begin());
 
   if (send_queue_max_size_ > 0 && send_queue_.size() > send_queue_max_size_) {
-    VLOG(1) << "WsSession send queue size > " << send_queue_max_size_
+    LOG(WARNING) << "WsSession send queue size="
+        << send_queue_.size() << " > " << send_queue_max_size_
         << ", erase eldest ones";
     send_queue_.erase(send_queue_.begin(),
       send_queue_.end() - send_queue_max_size_);

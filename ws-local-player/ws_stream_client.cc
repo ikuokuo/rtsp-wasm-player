@@ -17,6 +17,7 @@ extern "C" {
 #include "common/media/stream_video.h"
 #include "common/net/packet.h"
 #include "common/util/log.h"
+#include "common/util/logext.h"
 
 namespace client {
 
@@ -107,18 +108,23 @@ void WsStreamClient::Run() {
 
 void WsStreamClient::OnEventRecv(
     beast::flat_buffer &buffer, std::size_t bytes_n) {
+  auto t = logext::TimeRecord::Create("WsStreamClient::OnEventRecv");
   WsClient<std::vector<uint8_t>>::OnEventRecv(buffer, bytes_n);
 
+  t->Beg("FromBytes");
   net::Data data;
   auto buf = buffer.data();
   data.FromBytes(buf);
   buffer.consume(buf.size());
+  t->End();
 
   VLOG(2) << "buf_n=" << buf.size() << ", bytes_n=" << bytes_n
       << ", type=" << data.type << ", packet_n=" << data.packet->size;
 
   auto op = ops_[data.type];
+  t->Beg("GetFrame");
   auto frame = op->GetFrame(data.packet);
+  t->End();
   if (frame == nullptr) return;
 
   if (data.type == AVMEDIA_TYPE_VIDEO) {
@@ -134,4 +140,6 @@ void WsStreamClient::OnEventRecv(
       ui_cond_.notify_one();
     }
   }
+
+  VLOG(2) << t->Log();
 }

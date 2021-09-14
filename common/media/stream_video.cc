@@ -16,6 +16,7 @@ extern "C" {
 #endif
 
 #include "common/util/log.h"
+#include "common/util/logext.h"
 #include "common/util/throw_error.h"
 
 StreamVideoOp::StreamVideoOp(
@@ -31,6 +32,7 @@ StreamVideoOp::~StreamVideoOp() {
 
 AVFrame *StreamVideoOp::GetFrame(AVPacket *packet) {
   assert(packet != nullptr);
+  auto t = logext::TimeRecord::Create("StreamVideoOp::GetFrame");
 
   // decode
 
@@ -53,6 +55,7 @@ AVFrame *StreamVideoOp::GetFrame(AVPacket *packet) {
     frame_ = av_frame_alloc();
   }
 
+  t->Beg("avcodec_send_packet");
   int ret = avcodec_send_packet(codec_ctx_, packet);
   if (ret != 0) {
     if (ret == AVERROR(EAGAIN)) {
@@ -61,7 +64,9 @@ AVFrame *StreamVideoOp::GetFrame(AVPacket *packet) {
       throw StreamError(ret);
     }
   }
+  t->End();
 
+  t->Beg("avcodec_receive_frame");
   ret = avcodec_receive_frame(codec_ctx_, frame_);
   if (ret != 0) {
     if (ret == AVERROR(EAGAIN)) {
@@ -70,6 +75,7 @@ AVFrame *StreamVideoOp::GetFrame(AVPacket *packet) {
       throw StreamError(ret);
     }
   }
+  t->End();
 
   AVFrame *result = frame_;
 
@@ -118,12 +124,15 @@ AVFrame *StreamVideoOp::GetFrame(AVPacket *packet) {
       if (sws_ctx_ == nullptr) throw StreamError("Get sws context fail");
     }
 
+    t->Beg("sws_scale");
     sws_scale(sws_ctx_, frame_->data, frame_->linesize, 0, codec_ctx_->height,
       sws_frame_->data, sws_frame_->linesize);
+    t->End();
 
     result = sws_frame_;
   }
 
+  VLOG(2) << t->Log();
   return result;
 }
 
