@@ -49,6 +49,13 @@ AVFrame *StreamVideoOp::GetFrame(AVPacket *packet) {
 
     op_ctx_->InitAVCodecContext(codec_ctx_);
 
+    if (options_.codec_thread_count > 0) {
+      codec_ctx_->thread_count = options_.codec_thread_count;
+    }
+    if (options_.codec_thread_type > 0) {
+      codec_ctx_->thread_type = options_.codec_thread_type;
+    }
+
     int ret = avcodec_open2(codec_ctx_, codec_, nullptr);
     if (ret != 0) throw StreamError(ret);
 

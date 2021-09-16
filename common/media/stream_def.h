@@ -25,6 +25,12 @@ enum StreamMethod {
 };
 
 struct StreamVideoOptions {
+  // avcodec options
+  int codec_thread_count = 0;  // set if > 0
+  //  1: FF_THREAD_FRAME, decode more than one frame at once
+  //  2: FF_THREAD_SLICE, decode more than one part of a single frame at once
+  int codec_thread_type = 0;  // set if > 0
+
   // swscale options
   bool sws_enable     = false;  // enable or not
   int sws_dst_width   = 0;      // src width if <= 0

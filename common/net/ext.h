@@ -182,6 +182,8 @@ void handle_request(
       std::make_tuple(http::status::ok, req.version())};
   res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
   res.set(http::field::content_type, mime_type(path));
+  res.set("Cross-Origin-Embedder-Policy", "require-corp");
+  res.set("Cross-Origin-Opener-Policy", "same-origin");
   res.content_length(size);
   res.keep_alive(req.keep_alive());
   return send(std::move(res));

@@ -77,6 +77,9 @@ template <>
 struct convert<StreamVideoOptions> {
   static Node encode(const StreamVideoOptions &opts) {
     Node node;
+    node["codec_thread_count"] = opts.codec_thread_count;
+    node["codec_thread_type"] = opts.codec_thread_type;
+
     node["sws_enable"] = opts.sws_enable;
     node["sws_dst_width"] = opts.sws_dst_width;
     node["sws_dst_height"] = opts.sws_dst_height;
@@ -89,6 +92,11 @@ struct convert<StreamVideoOptions> {
     if (!node.IsMap()) {
       return false;
     }
+    if (node["codec_thread_count"])
+      opts.codec_thread_count = node["codec_thread_count"].as<int>();
+    if (node["codec_thread_type"])
+      opts.codec_thread_type = node["codec_thread_type"].as<int>();
+
     if (node["sws_enable"])
       opts.sws_enable = node["sws_enable"].as<bool>();
     if (node["sws_dst_width"])

@@ -23,14 +23,26 @@ extern "C" {
 #include "common/media/stream.h"
 #include "common/gl/glfw_frame.h"
 
+struct WsStreamClientOptions {
+  WsClientOptions ws{};
+
+  StreamInfo stream_info{};
+
+  // avcodec options
+  int codec_thread_count = 0;  // set if > 0
+  //  1: FF_THREAD_FRAME, 2: FF_THREAD_SLICE
+  int codec_thread_type = 0;  // set if > 0
+
+  int ui_wait_secs = 10;
+  std::function<void()> ui_exit_func = nullptr;
+};
+
 class WsStreamClient : public WsClient<std::vector<uint8_t>> {
  public:
   using stream_ops_t =
       std::unordered_map<AVMediaType, std::shared_ptr<StreamOp>>;
 
-  WsStreamClient(asio::io_context &ioc, const WsClientOptions &options,
-                 const StreamInfo &info, int ui_wait_secs,
-                 std::function<void()> on_ui_exit = nullptr);
+  WsStreamClient(asio::io_context &ioc, const WsStreamClientOptions &options);
   ~WsStreamClient() override;
 
  protected:

@@ -31,9 +31,8 @@ class Frame : public std::enable_shared_from_this<Frame> {
     type_ = type;
     frame_ = frame;
     // frame_ = av_frame_clone(frame);
-    // if (type_ == AVMEDIA_TYPE_VIDEO) {
-    //   VLOG(1) << " [v] frame size=" << width() << "x" << height()
-    //       << ", fmt: " << format();
+    // if (frame_ == nullptr) {
+    //   LOG(ERROR) << "Frame::Alloc av_frame_clone fail";
     // }
     return shared_from_this();
   }

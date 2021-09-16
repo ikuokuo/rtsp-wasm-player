@@ -44,21 +44,21 @@ class StreamVideoOpContext : public StreamOpContext {
 
 WsStreamClient::WsStreamClient(
     asio::io_context &ioc,
-    const WsClientOptions &options,
-    const StreamInfo &info,
-    int ui_wait_secs,
-    std::function<void()> on_ui_exit)
-  : WsClient<std::vector<uint8_t>>(ioc, options),
-    info_(info), ui_wait_secs_(ui_wait_secs), ui_ok_(false), ui_(nullptr),
-    on_ui_exit_(on_ui_exit) {
+    const WsStreamClientOptions &opts)
+  : WsClient<std::vector<uint8_t>>(ioc, opts.ws),
+    info_(opts.stream_info),
+    ui_wait_secs_(opts.ui_wait_secs), ui_ok_(false), ui_(nullptr),
+    on_ui_exit_(opts.ui_exit_func) {
   if (ui_wait_secs_ <= 0) ui_wait_secs_ = 10;
 
-  for (auto &&e : info.subs) {
+  for (auto &&e : info_.subs) {
     auto type = e.first;
     auto sub_info = e.second;
     switch (type) {
     case AVMEDIA_TYPE_VIDEO: {
       StreamVideoOptions options{};
+      options.codec_thread_count = opts.codec_thread_count;
+      options.codec_thread_type = opts.codec_thread_type;
       options.sws_enable = true;
       options.sws_dst_pix_fmt = AV_PIX_FMT_YUV420P;
       ops_[type] = std::make_shared<StreamVideoOp>(
@@ -67,7 +67,7 @@ WsStreamClient::WsStreamClient(
               sub_info->codecpar));
     } break;
     default:
-      LOG(WARNING) << "Stream[" << info.id << "] "
+      LOG(WARNING) << "Stream[" << info_.id << "] "
           << "media type not support at present, type="
           << av_get_media_type_string(type);
       break;

@@ -21,10 +21,9 @@ int main(int argc, char const *argv[]) {
   }
 
   HttpClientOptions http_options{};
-  WsClientOptions ws_options{};
+  WsStreamClientOptions client_options{};
   std::string ws_target_prefix = "/stream/";
   std::string ws_target_id;
-  int ui_wait_secs = 10;
   LOG(INFO) << "Load config: " << argv[1];
   try {
     auto node = YAML::LoadFile(argv[1]);
@@ -33,10 +32,11 @@ int main(int argc, char const *argv[]) {
     if (node["server"]) {
       auto node_server = node["server"];
       if (node_server["host"])
-        http_options.host = ws_options.host =
+        http_options.host = client_options.ws.host =
             node_server["host"].as<std::string>();
       if (node_server["port"])
-        http_options.port = ws_options.port = node_server["port"].as<int>();
+        http_options.port = client_options.ws.port =
+            node_server["port"].as<int>();
 
       // http
       if (node_server["http"]) {
@@ -57,10 +57,16 @@ int main(int argc, char const *argv[]) {
       }
     }
 
-    if (node["ui"]) {
-      auto node_ui = node["ui"];
-      if (node_ui["wait_secs"])
-        ui_wait_secs = node_ui["wait_secs"].as<int>();
+    if (node["client"]) {
+      auto node_client = node["client"];
+      if (node_client["codec_thread_count"])
+        client_options.codec_thread_count =
+            node_client["codec_thread_count"].as<int>();
+      if (node_client["codec_thread_type"])
+        client_options.codec_thread_type =
+            node_client["codec_thread_type"].as<int>();
+      if (node_client["ui_wait_secs"])
+        client_options.ui_wait_secs = node_client["ui_wait_secs"].as<int>();
     }
 
     if (argc >= 3)
@@ -132,25 +138,25 @@ int main(int argc, char const *argv[]) {
 
     auto stream_info = (*stream_infos)[stream_info_index];
 
-    ws_options.target = ws_target_prefix + stream_info.id;
-
     asio::io_context ioc;
     asio::signal_set signals(ioc, SIGINT, SIGTERM);
     signals.async_wait([&ioc](beast::error_code const&, int) {
       ioc.stop();
     });
 
-    auto ws_client = std::make_shared<WsStreamClient>(
-        ioc, ws_options, stream_info, ui_wait_secs,
-        [&ioc]() {
-          ioc.stop();
-        });
-    ws_client->SetEventCallback(net::NET_EVENT_FAIL,
+    client_options.ws.target = ws_target_prefix + stream_info.id;
+    client_options.stream_info = stream_info;
+    client_options.ui_exit_func = [&ioc]() {
+      ioc.stop();
+    };
+    auto client = std::make_shared<WsStreamClient>(
+        ioc, client_options);
+    client->SetEventCallback(net::NET_EVENT_FAIL,
         [](const std::shared_ptr<WsStreamClient::event_t> &event) {
           auto e = std::dynamic_pointer_cast<net::NetFailEvent>(event);
           LOG(ERROR) << e->what << ": " << e->ec.message();
         });
-    ws_client->Open();
+    client->Open();
 
     ioc.run();
   } else if (http_fail) {

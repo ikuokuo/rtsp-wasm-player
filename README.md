@@ -146,11 +146,12 @@ emmake make install
 # emcc settings
 #  https://emscripten.org/docs/tools_reference/emcc.html
 #  https://github.com/emscripten-core/emscripten/blob/main/src/settings.js
-# INITIAL_MEMORY=33554432 (32M)
-#  h264 1920x1080 will abort(OOM) directly if default
+# emcc default options
+#  INITIAL_MEMORY=104857600 (100M)
+#  INITIAL_MEMORY=33554432 (32M): h264 1920x1080 will abort(OOM) directly
 cd $MY_ROOT/ws-wasm-player
 emcc -std=c++14 -Os -DNDEBUG -s WASM=1 -s USE_SDL=2 -v \
--s INITIAL_MEMORY=33554432 \
+-s INITIAL_MEMORY=104857600 \
 -I . -I .. -I dist/ffmpeg/include \
 -I ../3rdparty/boost/include \
 -I ../3rdparty/json/single_include \
@@ -162,6 +163,18 @@ emcc -std=c++14 -Os -DNDEBUG -s WASM=1 -s USE_SDL=2 -v \
 -D UTIL_LOGGER_ENABLE \
 src/main.cc ../common/media/*.cc \
 --bind -o lib/decoder.js
+
+# emcc pthreads
+#  https://emscripten.org/docs/porting/pthreads.html
+# if wanna use threads, you should:
+#  1. rebuild the wasm libs with `-s USE_PTHREADS=1`
+#  2. set decode_* options in ws-wasm-player/lib/ws_client.js
+emcc -std=c++14 -Os -DNDEBUG -s WASM=1 -s USE_SDL=2 -v \
+-s INITIAL_MEMORY=104857600 -s USE_PTHREADS=1 \
+...
+
+# emcc simd
+#  https://emscripten.org/docs/porting/simd.html
 
 # emcc debugging
 #  https://emscripten.org/docs/debugging/Sanitizers.html
@@ -178,6 +191,8 @@ sws_getContext, Fatal: error in validating wasm2js output
 
 emcc -std=c++14 -Os -DNDEBUG -s WASM=0 -s USE_SDL=2 \
 -s MODULARIZE=1 -s EXPORT_NAME=\"'ModuleGL'\" \
+
+-s INITIAL_MEMORY=1073741824 -s USE_PTHREADS=1 \
 -->
 
 ### Build
@@ -221,9 +236,15 @@ Run:
 
 ```bash
 cd ws-wasm-player
+
+# Method 1. serve by rtsp-ws-proxy if default config
+# open http://127.0.0.1:8080 in browser
+
+# Method 2. serve by python http server
 python -m http.server 8000
+#  if wanna response headers: COOP, COEP
+python http_server.py 8000
 # open http://127.0.0.1:8000 in browser
-#   or http://127.0.0.1:8080 (served by rtsp-ws-proxy by default)
 ```
 
 #### WS Local Player

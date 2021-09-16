@@ -24,5 +24,9 @@ server:
     target_prefix: "/stream/"
     target_id: "a"
 
-ui:
-  wait_secs: 10
+client:
+  codec_thread_count: 8
+  # 1: FF_THREAD_FRAME, 2: FF_THREAD_SLICE
+  codec_thread_type: 1
+
+  ui_wait_secs: 10

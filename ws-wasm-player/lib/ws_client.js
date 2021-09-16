@@ -3,6 +3,20 @@ const WsClientOptions = {
   url: null,
   stream: null,
 
+  decode_async: false,
+  decode_queue_size: 0,
+  decode_thread_count: 0,
+  decode_thread_type: 0,
+
+  // need pthreads support
+  //  COOP, COEP headers are correctly set
+  //  https://emscripten.org/docs/porting/pthreads.html
+  // decode_async: true,
+  // decode_queue_size: 10,
+  // decode_thread_count: 4,
+  // // 1: FF_THREAD_FRAME, 2: FF_THREAD_SLICE
+  // decode_thread_type: 1,
+
   player: null,
 
   onopen: null,
@@ -64,7 +78,12 @@ class WsClient {
     }
 
     this.#decoder = new Module.Decoder();
-    this.#decoder.open(JSON.stringify(this.#options.stream));
+    this.#decoder.open(
+        JSON.stringify(this.#options.stream),
+        this.#options.decode_queue_size,
+        this.#options.decode_thread_count,
+        this.#options.decode_thread_type,
+        this.#ondecode.bind(this));
 
     const ws = new WebSocket(this.#options.url);
     ws.binaryType = 'arraybuffer';
@@ -97,32 +116,42 @@ class WsClient {
 
     let data = new Uint8Array(e.data);
     if (this.#decoder) {
-      this.#options.dbg && console.time("ws decode");
+      // this.#options.dbg && console.time("ws decode");
       const buf = Module._malloc(data.length);
       try {
         Module.HEAPU8.set(data, buf);
-        const frame = this.#decoder.decode(buf, data.length);
-        if (frame != null) {
-          this.#logd(`ws frame size=${frame.width}x${frame.height}`);
-          const player = this.#options.player;
-          if (player) {
-            if (player instanceof WebGLPlayer) {
-              frame.bytes = frame.getBytes();
-              // frame.bytes = new Uint8Array(Module.HEAPU8.buffer, frame.data, frame.size);
-            }
-            player.render(frame);
-          }
-          this.#options.ondata && this.#options.ondata(frame);
-          frame.delete();
+        if (this.#options.decode_async) {
+          this.#decoder.decodeAsync(buf, data.length);
         } else {
-          this.#logd("ws frame is null: decode error or need new packets");
+          // process the frame in #ondecode callback
+          const frame = this.#decoder.decode(buf, data.length);
+          // release the return frame reference
+          if (frame != null) frame.delete();
         }
       } finally {
         Module._free(buf);
       }
-      this.#options.dbg && console.timeEnd("ws decode");
+      // this.#options.dbg && console.timeEnd("ws decode");
     } else {
       this.#options.ondata && this.#options.ondata(data);
+    }
+  }
+
+  #ondecode(frame) {
+    if (frame != null) {
+      this.#logd(`ws frame size=${frame.width}x${frame.height}`);
+      const player = this.#options.player;
+      if (player) {
+        if (player instanceof WebGLPlayer) {
+          frame.bytes = frame.getBytes();
+          // frame.bytes = new Uint8Array(Module.HEAPU8.buffer, frame.data, frame.size);
+        }
+        player.render(frame);
+      }
+      this.#options.ondata && this.#options.ondata(frame);
+      frame.delete();
+    } else {
+      this.#logd("ws frame is null: decode error or need new packets");
     }
   }
 
