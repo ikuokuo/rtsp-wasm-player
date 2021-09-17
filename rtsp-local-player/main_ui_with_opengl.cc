@@ -27,10 +27,13 @@ int main(int argc, char const *argv[]) {
     return 1;
   }
 
-  if (options.video.sws_enable != true ||
-      options.video.sws_dst_pix_fmt != AV_PIX_FMT_YUV420P) {
-    LOG(WARNING) << " sws change to enable and yuv420p (for opengl display)";
+  if (options.video.sws_enable != true) {
+    LOG(WARNING) << " sws change to enable (for opengl display)";
     options.video.sws_enable = true;
+  }
+  if (options.video.sws_dst_pix_fmt != AV_PIX_FMT_YUV420P &&
+      options.video.sws_dst_pix_fmt != AV_PIX_FMT_YUVJ420P) {
+    LOG(WARNING) << " sws change to yuv420p (for opengl display)";
     options.video.sws_dst_pix_fmt = AV_PIX_FMT_YUV420P;
   }
 

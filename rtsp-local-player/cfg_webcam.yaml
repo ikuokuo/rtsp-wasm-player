@@ -30,7 +30,7 @@ stream:
     # with opencv
     sws_dst_pix_fmt: "bgr24"
     # with opengl
-    # sws_dst_pix_fmt: "yuyv420p"
+    # sws_dst_pix_fmt: "yuv420p"
 
 ui_cv:
   stream_get_frequency: 20

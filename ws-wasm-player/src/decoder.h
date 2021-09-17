@@ -79,7 +79,13 @@ class Decoder {
         options.codec_thread_count = thread_count;
         options.codec_thread_type = thread_type;
         options.sws_enable = true;
-        options.sws_dst_pix_fmt = AV_PIX_FMT_YUV420P;
+        if (sub_info->codecpar->format == AV_PIX_FMT_YUVJ420P || (
+            sub_info->codecpar->format == AV_PIX_FMT_YUV420P &&
+            sub_info->codecpar->color_range == AVCOL_RANGE_JPEG)) {
+          options.sws_dst_pix_fmt = AV_PIX_FMT_YUVJ420P;
+        } else {
+          options.sws_dst_pix_fmt = AV_PIX_FMT_YUV420P;
+        }
         stream_ops_[type] = std::make_shared<StreamVideoOp>(
             options,
             std::make_shared<Decoder::StreamVideoOpContext>(
