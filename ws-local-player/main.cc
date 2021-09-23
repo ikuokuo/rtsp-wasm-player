@@ -12,8 +12,7 @@
 #include "common/util/log.h"
 
 int main(int argc, char const *argv[]) {
-  config::InitGoogleLoggingFlags();
-  google::InitGoogleLogging(argv[0]);
+  config::InitLogging(argv[0]);
 
   if (argc < 2) {
     LOG(ERROR) << "Usage: <program> config.yaml [stream_id]";
@@ -27,7 +26,7 @@ int main(int argc, char const *argv[]) {
   LOG(INFO) << "Load config: " << argv[1];
   try {
     auto node = YAML::LoadFile(argv[1]);
-    config::InitGoogleLoggingFlags(node["log"]);
+    config::InitLoggingFlags(node["log"]);
 
     if (node["server"]) {
       auto node_server = node["server"];

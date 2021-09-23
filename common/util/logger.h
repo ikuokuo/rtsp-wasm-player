@@ -23,11 +23,12 @@
 #define LOG(severity) \
     UTIL_LOGGER(__FILE__, __LINE__, UTIL_LOG_TAG, UTIL_LOGGER::severity).stream()
 #define LOG_IF(severity, condition) \
-    !(condition) ? (void) 0 : LoggerVoidify() & LOG(severity)
+    !(condition) ? void(0) : LoggerVoidify() & LOG(severity)
 
 // VLOG macros always log at the INFO log level
 #define VLOG(n)       LOG_IF(INFO, UTIL_LOGGER::INFO >= UTIL_LOG_MINLEVEL && n <= UTIL_LOG_V)
 #define VLOG_IS_ON(n) (n <= UTIL_LOG_V)
+#define VLOG_IF(n, condition) !(condition) ? void(0) : VLOG(n)
 
 // Logger
 

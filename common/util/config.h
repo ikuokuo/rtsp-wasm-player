@@ -5,16 +5,32 @@
 #include <string>
 #include <vector>
 
-#define UTIL_CONFIG_GLOG
-
-#ifdef UTIL_CONFIG_GLOG
-
-#include <glog/logging.h>
+#include "log.h"
 
 namespace config {
 
+#ifdef UTIL_LOGGER_ENABLE
+
 inline
-void InitGoogleLoggingFlags() {
+void InitLogging(const char* argv0) {
+  (void)argv0;
+}
+
+inline
+void InitLoggingFlags(const YAML::Node &node) {
+  if (!node) return;
+  if (node["log_prefix"])
+    UTIL_LOG_PREFIX = node["log_prefix"].as<bool>();
+  if (node["minloglevel"])
+    UTIL_LOG_MINLEVEL = node["minloglevel"].as<int>();
+  if (node["v"])
+    UTIL_LOG_V = node["v"].as<int>();
+}
+
+#else
+
+inline
+void InitLogging(const char* argv0) {
   FLAGS_logtostderr = true;
   FLAGS_alsologtostderr = false;
   FLAGS_colorlogtostderr = true;
@@ -35,10 +51,12 @@ void InitGoogleLoggingFlags() {
     gg::SetLogSymlink(s, );
   }
   */
+
+  google::InitGoogleLogging(argv0);
 }
 
 inline
-void InitGoogleLoggingFlags(const YAML::Node &node) {
+void InitLoggingFlags(const YAML::Node &node) {
   if (!node) return;
   if (node["logtostderr"])
     FLAGS_logtostderr = node["logtostderr"].as<bool>();
@@ -63,9 +81,9 @@ void InitGoogleLoggingFlags(const YAML::Node &node) {
     FLAGS_stop_logging_if_full_disk = node["stop_logging_if_full_disk"].as<bool>();
 }
 
-}  // namespace config
+#endif  // UTIL_LOGGER_ENABLE
 
-#endif  // UTIL_CONFIG_GLOG
+}  // namespace config
 
 #ifdef UTIL_CONFIG_STREAM
 

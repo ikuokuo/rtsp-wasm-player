@@ -7,8 +7,7 @@
 #include "common/util/config.h"
 
 int main(int argc, char const *argv[]) {
-  config::InitGoogleLoggingFlags();
-  google::InitGoogleLogging(argv[0]);
+  config::InitLogging(argv[0]);
 
   if (argc < 2) {
     LOG(ERROR) << "Usage: <program> config.yaml";
@@ -20,7 +19,7 @@ int main(int argc, char const *argv[]) {
   StreamOptions options{};
   try {
     node = YAML::LoadFile(argv[1]);
-    config::InitGoogleLoggingFlags(node["log"]);
+    config::InitLoggingFlags(node["log"]);
     options = node["stream"].as<StreamOptions>();
   } catch (const std::exception &e) {
     LOG(ERROR) << " parse options fail, " << e.what();

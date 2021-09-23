@@ -35,8 +35,7 @@ struct Config {
 int LoadConfig(const std::string &path, Config *config);
 
 int main(int argc, char const *argv[]) {
-  config::InitGoogleLoggingFlags();
-  google::InitGoogleLogging(argv[0]);
+  config::InitLogging(argv[0]);
 
   LOG(INFO) << "boost version: " << BOOST_VERSION;
   LOG(INFO) << "ffmpeg version";
@@ -103,7 +102,7 @@ int LoadConfig(const std::string &path, Config *config) {
   auto &stream_ui_enable = config->stream_ui_enable;
   try {
     auto node = YAML::LoadFile(path);
-    config::InitGoogleLoggingFlags(node["log"]);
+    config::InitLoggingFlags(node["log"]);
 
     if (node["server"]) {
       auto node_server = node["server"];
