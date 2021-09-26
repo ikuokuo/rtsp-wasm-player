@@ -46,7 +46,7 @@ WsStreamClient::WsStreamClient(
     asio::io_context &ioc,
     const WsStreamClientOptions &opts)
   : WsClient<std::vector<uint8_t>>(ioc, opts.ws),
-    info_(opts.stream_info),
+    info_(opts.stream_info), recv_from_key_frame_(false),
     ui_wait_secs_(opts.ui_wait_secs), ui_ok_(false), ui_(nullptr),
     on_ui_exit_(opts.ui_exit_func) {
   if (ui_wait_secs_ <= 0) ui_wait_secs_ = 10;
@@ -127,6 +127,14 @@ void WsStreamClient::OnEventRecv(
 
   VLOG(2) << "buf_n=" << buf.size() << ", bytes_n=" << bytes_n
       << ", type=" << data.type << ", packet_n=" << data.packet->size;
+  if (!recv_from_key_frame_) {
+    if ((data.packet->flags & AV_PKT_FLAG_KEY) == 0) {
+      // non-existing PPS 0 referenced
+      VLOG(1) << " recv packet ignored, wait key for the first one";
+      return;
+    }
+    recv_from_key_frame_ = true;
+  }
 
   auto op = ops_[data.type];
   t->Beg("GetFrame");

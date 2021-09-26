@@ -53,6 +53,7 @@ class WsStreamClient : public WsClient<std::vector<uint8_t>> {
 
   StreamInfo info_;
   stream_ops_t ops_;
+  bool recv_from_key_frame_;
 
   int ui_wait_secs_;
   bool ui_ok_;

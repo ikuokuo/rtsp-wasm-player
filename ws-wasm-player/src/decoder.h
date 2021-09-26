@@ -110,6 +110,14 @@ class Decoder {
     VLOG(1) << "decode packet type=" << av_get_media_type_string(data.type)
         << ", size=" << data.packet->size;
 
+    if (!decode_from_key_frame_) {
+      if ((data.packet->flags & AV_PKT_FLAG_KEY) == 0) {
+        VLOG(1) << "decode packet ignored, wait key for the first one";
+        return nullptr;
+      }
+      decode_from_key_frame_ = true;
+    }
+
     try {
       auto op = stream_ops_[data.type];
       time_stat_->Beg();
@@ -137,6 +145,13 @@ class Decoder {
       std::lock_guard<std::mutex> _(decode_mutex_);
       auto data = std::make_shared<net::Data>();
       data->FromBytes(buf, buf_size);
+      if (!decode_from_key_frame_) {
+        if ((data->packet->flags & AV_PKT_FLAG_KEY) == 0) {
+          VLOG(1) << "decode packet ignored, wait key for the first one";
+          return;
+        }
+        decode_from_key_frame_ = true;
+      }
       decode_datas_.push_back(data);
       if (decode_datas_.size() > decode_datas_maxsize_) {
         for (auto it = decode_datas_.begin(); it != decode_datas_.end(); ++it) {
@@ -225,6 +240,7 @@ class Decoder {
   StreamInfo stream_info_;
   stream_ops_t stream_ops_;
   decode_callback_t decode_cb_;
+  bool decode_from_key_frame_{false};
 
   std::atomic_bool decode_stop_{true};
   std::size_t decode_datas_maxsize_{2};
