@@ -46,15 +46,20 @@ struct StreamFilterOptions {
 
   // encode options
   //  set if int > -1, str not empty
-  std::string enc_name = "h264_nvenc";
-  int enc_bit_rate = 400000;
-  int enc_framerate = 5;
-  int enc_gop_size = 10;
-  int enc_max_b_frames = 0;
+  std::string enc_name = "";
+  int enc_bit_rate = -1;
+  int enc_framerate = -1;
+  int enc_gop_size = -1;
+  int enc_max_b_frames = -1;
   int enc_qmin = -1;
   int enc_qmax = -1;
   int enc_thread_count = -1;
   std::map<std::string, std::string> enc_open_options{};
+
+  std::string dec_name = "";
+  int dec_thread_count = -1;
+  //  1: FF_THREAD_FRAME, 2: FF_THREAD_SLICE
+  int dec_thread_type = -1;
 };
 
 class StreamFilter {

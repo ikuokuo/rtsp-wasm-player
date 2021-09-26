@@ -152,6 +152,12 @@ StreamFilterStatus StreamFilterVideoEnc::SendPacket(AVPacket *pkt) {
 
   if (decoder_ == nullptr) {
     StreamVideoOptions options{};
+    if (!options_.dec_name.empty())
+      options.dec_name = options_.dec_name;
+    if (options_.dec_thread_count > -1)
+      options.dec_thread_count = options_.dec_thread_count;
+    if (options_.dec_thread_type > -1)
+      options.dec_thread_type = options_.dec_thread_type;
     // NVIDIA Video Codec SDK
     //  https://developer.nvidia.com/nvidia-video-codec-sdk
     // NVIDIA FFmpeg Transcoding Guide

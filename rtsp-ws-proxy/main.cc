@@ -130,6 +130,12 @@ std::vector<StreamFilterOptions> LoadFiltersOptions(const YAML::Node &node) {
             it->second.as<std::string>();
       }
     }
+    if (node["dec_name"])
+      opt.dec_name = node["dec_name"].as<std::string>();
+    if (node["dec_thread_count"])
+      opt.dec_thread_count = node["dec_thread_count"].as<int>();
+    if (node["dec_thread_type"])
+      opt.dec_thread_type = node["dec_thread_type"].as<int>();
     return opt;
   };
   for (auto it = node.begin(); it != node.end(); ++it) {

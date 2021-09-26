@@ -67,7 +67,7 @@ streams:
     filters:
       # - type: "video_bsf"
       - type: "video_enc"
-        enc_bit_rate: 400000
+        # enc_bit_rate: 400000
         enc_framerate: 5
         enc_gop_size: 5
         enc_max_b_frames: 0
@@ -87,6 +87,11 @@ streams:
         #   tune: "zerolatency"
         #   nal-hrd: "vbr"
         #   crf: "25"
+
+        ## if decode h264 then encode, could set codec name
+        # dec_name: "h264_cuvid"
+        # dec_thread_count: -1
+        # dec_thread_type: -1
 
 # 25 = 1000 / 40 fps
 stream_get_frequency: 25

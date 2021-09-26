@@ -26,13 +26,13 @@ struct StreamVideoEncodeOptions {
    * @see libavcodec/avcodec.h
    */
   std::string codec_name  = "h264_nvenc";
-  int codec_bit_rate      = 400000;
-  int codec_width         = 352;
-  int codec_height        = 288;
-  int codec_framerate     = 10;
-  AVPixelFormat codec_pix_fmt = AV_PIX_FMT_YUV420P;
-  int codec_gop_size      = 10;
-  int codec_max_b_frames  = 1;
+  int codec_bit_rate      = -1;
+  int codec_width         = -1;
+  int codec_height        = -1;
+  int codec_framerate     = -1;
+  AVPixelFormat codec_pix_fmt = AV_PIX_FMT_NONE;
+  int codec_gop_size      = -1;
+  int codec_max_b_frames  = -1;
   int codec_qmin          = -1;
   int codec_qmax          = -1;
   int codec_thread_count  = -1;
