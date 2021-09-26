@@ -43,6 +43,7 @@ streams:
     input_url: "../data/test.mp4"
 
     dump_format: false
+
   -
     id: "b"
     method: "network"
@@ -51,6 +52,7 @@ streams:
     max_delay: 1000000
     rtsp_transport: "tcp"
     stimeout: 5000000
+
   -
     id: "c"
     method: "webcam"
@@ -65,15 +67,15 @@ streams:
     filters:
       # - type: "video_bsf"
       - type: "video_enc"
-        enc_name: "h264_nvenc"
         enc_bit_rate: 400000
         enc_framerate: 5
-        enc_gop_size: 10
+        enc_gop_size: 5
         enc_max_b_frames: 0
         enc_qmin: -1
         enc_qmax: -1
         enc_thread_count: -1
         ## ffmpeg -h encoder=h264_nvenc
+        enc_name: "h264_nvenc"
         enc_open_options:
           preset: "medium"
           zerolatency: "1"

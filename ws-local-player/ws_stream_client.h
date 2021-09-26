@@ -15,6 +15,7 @@ extern "C" {
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -28,10 +29,11 @@ struct WsStreamClientOptions {
 
   StreamInfo stream_info{};
 
-  // avcodec options
-  int codec_thread_count = 0;  // set if > 0
+  // decode options
+  std::string dec_name = "";
+  int dec_thread_count = 0;  // set if > 0
   //  1: FF_THREAD_FRAME, 2: FF_THREAD_SLICE
-  int codec_thread_type = 0;  // set if > 0
+  int dec_thread_type = 0;  // set if > 0
 
   int ui_wait_secs = 10;
   std::function<void()> ui_exit_func = nullptr;

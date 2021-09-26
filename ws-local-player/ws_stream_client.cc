@@ -57,8 +57,9 @@ WsStreamClient::WsStreamClient(
     switch (type) {
     case AVMEDIA_TYPE_VIDEO: {
       StreamVideoOptions options{};
-      options.codec_thread_count = opts.codec_thread_count;
-      options.codec_thread_type = opts.codec_thread_type;
+      options.dec_name = opts.dec_name;
+      options.dec_thread_count = opts.dec_thread_count;
+      options.dec_thread_type = opts.dec_thread_type;
       options.sws_enable = true;
       if (sub_info->codecpar->format == AV_PIX_FMT_YUVJ420P || (
           sub_info->codecpar->format == AV_PIX_FMT_YUV420P &&

@@ -25,8 +25,9 @@ server:
     target_id: "a"
 
 client:
-  codec_thread_count: 8
+  # dec_name: "h264_cuvid"
+  dec_thread_count: 8
   # 1: FF_THREAD_FRAME, 2: FF_THREAD_SLICE
-  codec_thread_type: 1
+  dec_thread_type: 1
 
   ui_wait_secs: 10

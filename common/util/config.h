@@ -95,8 +95,9 @@ template <>
 struct convert<StreamVideoOptions> {
   static Node encode(const StreamVideoOptions &opts) {
     Node node;
-    node["codec_thread_count"] = opts.codec_thread_count;
-    node["codec_thread_type"] = opts.codec_thread_type;
+    node["dec_name"] = opts.dec_name;
+    node["dec_thread_count"] = opts.dec_thread_count;
+    node["dec_thread_type"] = opts.dec_thread_type;
 
     node["sws_enable"] = opts.sws_enable;
     node["sws_dst_width"] = opts.sws_dst_width;
@@ -110,10 +111,12 @@ struct convert<StreamVideoOptions> {
     if (!node.IsMap()) {
       return false;
     }
-    if (node["codec_thread_count"])
-      opts.codec_thread_count = node["codec_thread_count"].as<int>();
-    if (node["codec_thread_type"])
-      opts.codec_thread_type = node["codec_thread_type"].as<int>();
+    if (node["dec_name"])
+      opts.dec_name = node["dec_name"].as<std::string>();
+    if (node["dec_thread_count"])
+      opts.dec_thread_count = node["dec_thread_count"].as<int>();
+    if (node["dec_thread_type"])
+      opts.dec_thread_type = node["dec_thread_type"].as<int>();
 
     if (node["sws_enable"])
       opts.sws_enable = node["sws_enable"].as<bool>();

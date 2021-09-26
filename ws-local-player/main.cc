@@ -58,12 +58,15 @@ int main(int argc, char const *argv[]) {
 
     if (node["client"]) {
       auto node_client = node["client"];
-      if (node_client["codec_thread_count"])
-        client_options.codec_thread_count =
-            node_client["codec_thread_count"].as<int>();
-      if (node_client["codec_thread_type"])
-        client_options.codec_thread_type =
-            node_client["codec_thread_type"].as<int>();
+      if (node_client["dec_name"])
+        client_options.dec_name =
+            node_client["dec_name"].as<std::string>();
+      if (node_client["dec_thread_count"])
+        client_options.dec_thread_count =
+            node_client["dec_thread_count"].as<int>();
+      if (node_client["dec_thread_type"])
+        client_options.dec_thread_type =
+            node_client["dec_thread_type"].as<int>();
       if (node_client["ui_wait_secs"])
         client_options.ui_wait_secs = node_client["ui_wait_secs"].as<int>();
     }
