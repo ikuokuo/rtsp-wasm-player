@@ -67,15 +67,36 @@ cd $MY_ROOT/3rdparty/source/ffmpeg
 --disable-programs --disable-doc --disable-everything \
 --enable-decoder=h264 --enable-parser=h264 \
 --enable-decoder=hevc --enable-parser=hevc \
---enable-hwaccel=h264_nvdec --enable-hwaccel=hevc_nvdec \
 --enable-demuxer=rtsp \
 --enable-demuxer=rawvideo --enable-decoder=rawvideo --enable-indev=v4l2 \
---enable-protocol=file \
---enable-bsf=h264_mp4toannexb --enable-bsf=hevc_mp4toannexb --enable-bsf=null
+--enable-protocol=file
 make -j`nproc`
 make install
 cd $MY_ROOT/3rdparty/
 ln -s ffmpeg-4.4 $MY_ROOT/3rdparty/ffmpeg
+
+# If wanna build ffmpeg with nvidia,
+# NVIDIA Video Codec SDK
+#  https://developer.nvidia.com/nvidia-video-codec-sdk
+# NVIDIA FFmpeg Transcoding Guide
+#  https://developer.nvidia.com/blog/nvidia-ffmpeg-transcoding-guide/
+git clone --depth 1 -b n11.0.10.1 https://github.com/FFmpeg/nv-codec-headers.git $MY_ROOT/3rdparty/source/nv-codec-headers
+cd $MY_ROOT/3rdparty/source/nv-codec-headers
+sudo make install
+cd $MY_ROOT/3rdparty/source/ffmpeg
+./configure --prefix=$MY_ROOT/3rdparty/ffmpeg-4.4 \
+...
+--enable-cuda --enable-cuvid --enable-nvdec --enable-nvenc --enable-nonfree --enable-libnpp \
+--extra-cflags=-I$CUDA_HOME/include --extra-ldflags=-L$CUDA_HOME/lib64 \
+--enable-decoder=h264_cuvid --enable-decoder=hevc_cuvid \
+--enable-encoder=h264_nvenc --enable-encoder=hevc_nvenc \
+--enable-hwaccel=h264_nvdec --enable-hwaccel=hevc_nvdec \
+--enable-bsf=h264_mp4toannexb --enable-bsf=hevc_mp4toannexb --enable-bsf=null
+# For video filters (rtsp-ws-proxy): --enable-encoder, --enable-bsf
+# For h264/hevc encoders:
+#  sudo apt install libx264-dev libx265-dev -y
+# --enable-libx264 --enable-libx265 \
+# --enable-encoder=libx264 --enable-encoder=libx265 \
 
 # glog: https://github.com/google/glog
 git clone --depth 1 -b v0.5.0 https://github.com/google/glog.git $MY_ROOT/3rdparty/source/glog

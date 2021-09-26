@@ -39,12 +39,14 @@ class StreamOpContext {
 struct StreamSub {
   AVStream *stream;
   std::shared_ptr<StreamOp> op;
+  std::shared_ptr<StreamSubInfo> info;
 };
 
 class Stream {
  public:
   using stream_sub_t = StreamSub;
-  using stream_subs_t = std::unordered_map<AVMediaType, stream_sub_t>;
+  using stream_subs_t =
+      std::unordered_map<AVMediaType, std::shared_ptr<stream_sub_t>>;
 
   Stream() noexcept;
   ~Stream() noexcept;
@@ -63,7 +65,7 @@ class Stream {
 
   StreamOptions GetOptions() const;
   stream_subs_t GetStreamSubs() const;
-  stream_sub_t GetStreamSub(AVMediaType type) const;
+  std::shared_ptr<stream_sub_t> GetStreamSub(AVMediaType type) const;
 
  private:
   StreamOptions options_;

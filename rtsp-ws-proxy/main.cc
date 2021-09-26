@@ -29,6 +29,7 @@ extern "C" {
 struct Config {
   WsServerOptions options{};
   std::map<std::string, StreamOptions> stream_options;
+  std::map<std::string, std::vector<StreamFilterOptions>> stream_filters_options;  // NOLINT
   int stream_get_frequency = 20;
   bool stream_ui_enable = false;
 };
@@ -72,7 +73,8 @@ int main(int argc, char const *argv[]) {
       players[id] = player;
     }
     auto stream = std::make_shared<StreamHandler>(
-      id, entry.second, config.stream_get_frequency,
+      id, entry.second, config.stream_filters_options[id],
+      config.stream_get_frequency,
       [id, &server, player](
           const std::shared_ptr<Stream> &stream,
           const AVMediaType &type, AVPacket *packet) {
@@ -94,10 +96,53 @@ int main(int argc, char const *argv[]) {
   return EXIT_SUCCESS;
 }
 
+std::vector<StreamFilterOptions> LoadFiltersOptions(const YAML::Node &node) {
+  std::vector<StreamFilterOptions> opts;
+  if (!node.IsSequence()) return opts;
+  auto LoadFilterOptions = [](const YAML::Node &node) {
+    StreamFilterOptions opt{};
+    opt.type = StreamFilterTypeFromString(node["type"].as<std::string>());
+    // bsf options
+    if (node["bsf_name"])
+      opt.bsf_name = node["bsf_name"].as<std::string>();
+    // framerate options
+    if (node["enc_name"])
+      opt.enc_name = node["enc_name"].as<std::string>();
+    if (node["enc_bit_rate"])
+      opt.enc_bit_rate = node["enc_bit_rate"].as<int>();
+    if (node["enc_framerate"])
+      opt.enc_framerate = node["enc_framerate"].as<int>();
+    if (node["enc_gop_size"])
+      opt.enc_gop_size = node["enc_gop_size"].as<int>();
+    if (node["enc_max_b_frames"])
+      opt.enc_max_b_frames = node["enc_max_b_frames"].as<int>();
+    if (node["enc_qmin"])
+      opt.enc_qmin = node["enc_qmin"].as<int>();
+    if (node["enc_qmax"])
+      opt.enc_qmax = node["enc_qmax"].as<int>();
+    if (node["enc_thread_count"])
+      opt.enc_thread_count = node["enc_thread_count"].as<int>();
+    auto node_fr_open_options = node["fr_open_options"];
+    if (node_fr_open_options && node_fr_open_options.IsMap()) {
+      for (auto it = node_fr_open_options.begin();
+          it != node_fr_open_options.end(); ++it) {
+        opt.enc_open_options[it->first.as<std::string>()] =
+            it->second.as<std::string>();
+      }
+    }
+    return opt;
+  };
+  for (auto it = node.begin(); it != node.end(); ++it) {
+    opts.push_back(std::move(LoadFilterOptions(*it)));
+  }
+  return opts;
+}
+
 int LoadConfig(const std::string &path, Config *config) {
   LOG(INFO) << "Load config: " << path;
   auto &options = config->options;
   auto &stream_options = config->stream_options;
+  auto &stream_filters_options = config->stream_filters_options;
   auto &stream_get_frequency = config->stream_get_frequency;
   auto &stream_ui_enable = config->stream_ui_enable;
   try {
@@ -140,6 +185,7 @@ int LoadConfig(const std::string &path, Config *config) {
       for (auto it = node_streams.begin(); it != node_streams.end(); ++it) {
         auto id = (*it)["id"].as<std::string>();
         stream_options[id] = it->as<StreamOptions>();
+        stream_filters_options[id] = LoadFiltersOptions((*it)["filters"]);
       }
     }
 

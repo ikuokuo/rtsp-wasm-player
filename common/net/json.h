@@ -184,7 +184,7 @@ struct adl_serializer<net::stream_map_t> {
         auto type = f.first;
         auto sub = f.second;
         s[av_get_media_type_string(type)] = {
-          {"codecpar", *sub.stream->codecpar},
+          {"codecpar", *sub->info->codecpar},
         };
       }
       j.push_back(s);

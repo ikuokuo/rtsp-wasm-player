@@ -14,14 +14,21 @@ extern "C" {
 #include <functional>
 
 #include "common/util/log.h"
+#include "common/util/logext.h"
 #include "common/util/throw_error.h"
 
-StreamHandler::StreamHandler(const std::string &id,
-                             const StreamOptions &options,
-                             int get_frequency,
-                             packet_callback_t cb)
-  : id_(id), options_(options), get_frequency_(get_frequency), packet_cb_(cb),
-    stream_(nullptr), bsf_ctx_(nullptr), bsf_packet_(nullptr) {
+StreamHandler::StreamHandler(
+    const std::string &id,
+    const StreamOptions &options,
+    const std::vector<StreamFilterOptions> &filters_options,
+    int get_frequency,
+    packet_callback_t cb)
+  : id_(id), options_(options), filters_options_(filters_options),
+    get_frequency_(get_frequency), packet_cb_(cb),
+    stream_(nullptr), video_filters_inited_(false), packet_recv_(nullptr) {
+  std::stringstream ss;
+  ss << "Stream[" << id_ << "]";
+  log_id_ = ss.str();
 }
 
 StreamHandler::~StreamHandler() {
@@ -40,102 +47,115 @@ void StreamHandler::Start() {
 
 void StreamHandler::Stop() {
   stream_->Stop();
-  if (bsf_ctx_) {
-    av_bsf_free(&bsf_ctx_);
-    bsf_ctx_ = nullptr;
-  }
-  if (bsf_packet_) {
-    av_packet_free(&bsf_packet_);
-    bsf_packet_ = nullptr;
+  if (packet_recv_) {
+    av_packet_free(&packet_recv_);
+    packet_recv_ = nullptr;
   }
 }
 
 void StreamHandler::OnEvent(const std::shared_ptr<StreamEvent> &e) {
   if (e->id == STREAM_EVENT_OPEN) {
-    LOG(INFO) << "Stream[" << id_ << "] open ...";
+    LOG(INFO) << log_id_ << " open ...";
   } else if (e->id == STREAM_EVENT_OPENED) {
-    LOG(INFO) << "Stream[" << id_ << "] open success";
+    LOG(INFO) << log_id_ << " open success";
   // } else if (e->id == STREAM_EVENT_CLOSE) {
-  //   LOG(INFO) << "Stream[" << id_ << "] close ...";
+  //   LOG(INFO) << log_id_ << " close ...";
   } else if (e->id == STREAM_EVENT_CLOSED) {
-    LOG(INFO) << "Stream[" << id_ << "] close success";
+    LOG(INFO) << log_id_ << " close success";
   } else if (e->id == STREAM_EVENT_LOOP) {
-    LOG(WARNING) << "Stream[" << id_ << "] loop ...";
+    LOG(WARNING) << log_id_ << " loop ...";
   } else if (e->id == STREAM_EVENT_ERROR) {
     auto event = std::dynamic_pointer_cast<StreamErrorEvent>(e);
-    LOG(ERROR) << "Stream[" << id_ << "] " << event->error.what();
+    LOG(ERROR) << log_id_ << " " << event->error.what();
   }
 }
 
-void StreamHandler::OnRunning(const std::shared_ptr<StreamThread> &t,
+void StreamHandler::OnRunning(const std::shared_ptr<StreamThread> &thread,
                               const std::shared_ptr<Stream> &s) {
-  (void)t;
+  (void)thread;
+  auto t = logext::TimeRecord::Create(log_id_ + " run");
 
+  t->Beg("get_pkt");
   auto packet = s->GetPacket(false);
   if (packet == nullptr) return;
+  t->End();
 
   auto type = AVMEDIA_TYPE_VIDEO;
   auto sub = s->GetStreamSub(type);
-  if (sub.stream->index != packet->stream_index) {
+  if (sub->stream->index != packet->stream_index) {
     return;
   }
 
-  if (bsf_ctx_ == nullptr) {
-    auto stream = sub.stream;
-    auto codec_id = stream->codecpar->codec_id;
+  InitVideoFilters(sub);
 
-    // ./configure --list-bsfs , ffmpeg -hide_banner -bsfs
-    std::string bsf_name;
-    switch (codec_id) {
-    case AV_CODEC_ID_H264: bsf_name = "h264_mp4toannexb"; break;
-    case AV_CODEC_ID_HEVC: bsf_name = "hevc_mp4toannexb"; break;
-    case AV_CODEC_ID_RAWVIDEO: bsf_name = "null"; break;
-    default:
-      throw_error<StreamError>() << "BSF name not accept, id=" << codec_id;
+  if (video_filters_.empty()) {
+    if (packet_cb_) {
+      packet_cb_(s, type, packet);
     }
-
-    auto bsf = av_bsf_get_by_name(bsf_name.c_str());
-    if (bsf == nullptr) {
-      throw_error<StreamError>() << "BSF not found, name=" << bsf_name;
-    }
-
-    int ret = av_bsf_alloc(bsf, &bsf_ctx_);
-    if (ret < 0) throw StreamError(ret);
-
-    ret = avcodec_parameters_copy(bsf_ctx_->par_in, stream->codecpar);
-    if (ret < 0) throw StreamError(ret);
-
-    ret = av_bsf_init(bsf_ctx_);
-    if (ret != 0) throw StreamError(ret);
+    av_packet_unref(packet);
+  } else {
+    t->Beg("do_filter");
+    auto do_callback = [this, &s, &type](AVPacket *pkt) {
+      if (packet_cb_) packet_cb_(s, type, pkt);
+    };
+    DoFilter(video_filters_, video_filters_.begin(), packet, do_callback);
+    t->End();
   }
 
-  if (bsf_packet_ == nullptr) {
-    bsf_packet_ = av_packet_alloc();
+  VLOG(2) << t->Log();
+}
+
+void StreamHandler::DoFilter(
+    const std::vector<std::shared_ptr<StreamFilter>> &filters,
+    const std::vector<std::shared_ptr<StreamFilter>>::iterator &filter,
+    AVPacket *pkt,
+    std::function<void(AVPacket *pkt)> on_recv) {
+  if (filter == filters.end()) {
+    on_recv(pkt);
+    return;
   }
 
-  int ret = av_bsf_send_packet(bsf_ctx_, packet);
-  if (ret != 0) {
-    if (ret == AVERROR(EAGAIN)) {
+  int status;
+
+  // send
+  do {
+    status = (*filter)->SendPacket(pkt);
+    av_packet_unref(pkt);
+    if (status == STREAM_FILTER_STATUS_BREAK) return;
+  } while (status == STREAM_FILTER_STATUS_AGAIN);
+
+  // recv
+  if (packet_recv_ == nullptr) {
+    packet_recv_ = av_packet_alloc();
+  }
+  do {
+    status = (*filter)->RecvPacket(packet_recv_);
+    if (status == STREAM_FILTER_STATUS_BREAK) {
+      av_packet_unref(packet_recv_);
       return;
-    } else {
-      throw StreamError(ret);
+    }
+    DoFilter(filters, filter+1, packet_recv_, on_recv);
+    av_packet_unref(packet_recv_);
+  } while (status == STREAM_FILTER_STATUS_AGAIN);
+
+  // STREAM_FILTER_STATUS_OK
+}
+
+void StreamHandler::InitVideoFilters(
+    const std::shared_ptr<Stream::stream_sub_t> &video) {
+  if (video_filters_inited_) return;
+  for (auto opts : filters_options_) {
+    switch (opts.type) {
+    case STREAM_FILTER_VIDEO_BSF:
+      video_filters_.push_back(std::make_shared<StreamFilterVideoBSF>(
+          video, opts));
+      break;
+    case STREAM_FILTER_VIDEO_ENC:
+      video_filters_.push_back(std::make_shared<StreamFilterVideoEnc>(
+          video, opts));
+      break;
+    default: break;
     }
   }
-  s->UnrefPacket();
-
-  ret = av_bsf_receive_packet(bsf_ctx_, bsf_packet_);
-  if (ret != 0) {
-    if (ret == AVERROR(EAGAIN)) {
-      av_packet_unref(bsf_packet_);
-      return;
-    } else {
-      throw StreamError(ret);
-    }
-  }
-
-  if (packet_cb_) {
-    packet_cb_(s, type, bsf_packet_);
-  }
-
-  av_packet_unref(bsf_packet_);
+  video_filters_inited_ = true;
 }

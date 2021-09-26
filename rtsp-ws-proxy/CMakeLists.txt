@@ -116,6 +116,8 @@ add_executable(rtsp-ws-proxy
   ws_stream_room.cc
   ws_stream_server.cc
   ws_stream_session.cc
+  stream_video_encoder.cc
+  stream_filter.cc
   stream_handler.cc
   stream_player.cc
 )
@@ -141,3 +143,4 @@ install(TARGETS rtsp-ws-proxy
 # others
 
 add_subdirectory(chat)
+add_subdirectory(ffmpeg)

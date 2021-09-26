@@ -54,7 +54,7 @@ void StreamPlayer::Send(
         options.sws_enable = true;
         options.sws_dst_pix_fmt = AV_PIX_FMT_YUV420P;
         ops_[type] = std::make_shared<StreamVideoOp>(options,
-            std::make_shared<StreamVideoOpContext>(sub.stream));
+            std::make_shared<StreamVideoOpContext>(sub->stream));
       } break;
       default: throw_error<StreamError>() << "Stream[" << id_ << "] "
           << "media type not support at present, type="

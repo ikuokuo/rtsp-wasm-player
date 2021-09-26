@@ -37,13 +37,13 @@ AVFrame *StreamVideoOp::GetFrame(AVPacket *packet) {
   // decode
 
   if (codec_ctx_ == nullptr) {
-    AVCodec *codec_ = avcodec_find_decoder(op_ctx_->GetAVCodecID());
-    if (codec_ == nullptr) {
+    AVCodec *codec = avcodec_find_decoder(op_ctx_->GetAVCodecID());
+    if (codec == nullptr) {
       throw_error<StreamError>() << "Decoder not found, id="
           << op_ctx_->GetAVCodecID();
     }
 
-    codec_ctx_ = avcodec_alloc_context3(codec_);
+    codec_ctx_ = avcodec_alloc_context3(codec);
     if (codec_ctx_ == nullptr)
       throw StreamError("Codec alloc context fail");
 
@@ -56,7 +56,7 @@ AVFrame *StreamVideoOp::GetFrame(AVPacket *packet) {
       codec_ctx_->thread_type = options_.codec_thread_type;
     }
 
-    int ret = avcodec_open2(codec_ctx_, codec_, nullptr);
+    int ret = avcodec_open2(codec_ctx_, codec, nullptr);
     if (ret != 0) throw StreamError(ret);
 
     frame_ = av_frame_alloc();
@@ -87,6 +87,7 @@ AVFrame *StreamVideoOp::GetFrame(AVPacket *packet) {
   AVFrame *result = frame_;
 
   // scale
+  //  sws, swscale, software scale
 
   if (options_.sws_enable) {
     if (sws_ctx_ == nullptr) {

@@ -1,5 +1,7 @@
 #include "stream.h"
 
+#include <utility>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -126,12 +128,16 @@ void Stream::Open(const StreamOptions &options) {
       continue;
     }
     if (codec_type == AVMEDIA_TYPE_VIDEO) {
-      stream_subs_[codec_type] = {
+      auto info = std::make_shared<StreamSubInfo>();
+      avcodec_parameters_copy(info->codecpar,
+          format_ctx_->streams[i]->codecpar);
+      stream_subs_[codec_type] = std::shared_ptr<StreamSub>(new StreamSub{
         format_ctx_->streams[i],
         std::make_shared<StreamVideoOp>(
             options.video,
-            std::make_shared<StreamVideoOpContext>(format_ctx_->streams[i]))
-      };
+            std::make_shared<StreamVideoOpContext>(format_ctx_->streams[i])),
+        std::move(info),
+      });
     } else {
       // stream of the type need support later, such as AVMEDIA_TYPE_AUDIO
       continue;
@@ -158,8 +164,8 @@ AVFrame *Stream::GetFrame(AVMediaType type, AVPacket *packet, bool unref) {
   }
   auto sub = GetStreamSub(type);
   AVFrame *frame = nullptr;
-  if (packet->stream_index == sub.stream->index) {
-    frame = sub.op->GetFrame(packet);
+  if (packet->stream_index == sub->stream->index) {
+    frame = sub->op->GetFrame(packet);
   }
   if (unref) av_packet_unref(packet_);
   return frame;
@@ -197,7 +203,8 @@ Stream::stream_subs_t Stream::GetStreamSubs() const {
   return stream_subs_;
 }
 
-Stream::stream_sub_t Stream::GetStreamSub(AVMediaType type) const {
+std::shared_ptr<Stream::stream_sub_t>
+Stream::GetStreamSub(AVMediaType type) const {
   try {
     return stream_subs_.at(type);
   } catch (const std::out_of_range &e) {
