@@ -35,7 +35,7 @@ struct StreamVideoOptions {
   // swscale options
   bool sws_enable     = false;  // enable or not
   int sws_dst_width   = 0;      // src width if <= 0
-  int sws_dst_height  = 0;      // src width if <= 0
+  int sws_dst_height  = 0;      // src height if <= 0
   AVPixelFormat sws_dst_pix_fmt = AV_PIX_FMT_NONE;  // src pix_fmt if NONE
   int sws_flags = 0;  // SWS_BICUBIC if 0
 };
@@ -50,7 +50,7 @@ struct StreamOptions {
 
   /**
    * avdevice options, only for webcam
-   * @see avdevice/v4l2.c
+   * @see libavdevice/v4l2.c
    */
   std::string input_format;  // v4l2, ...
   int width     = 0;  // set if > 0

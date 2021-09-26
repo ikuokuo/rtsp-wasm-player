@@ -216,7 +216,7 @@ class Decoder {
           }
         } catch (const StreamError &err) {
           LOG(ERROR) << err.what();
-            break;
+          break;
         }
       }
     }
