@@ -99,7 +99,7 @@ int main(int argc, char const *argv[]) {
         [&http_mutex, &http_cond, &http_resp_ok, &stream_infos](
             const HttpClient::response_t &res) {
           VLOG(1) << res;
-          if (res.result() == beast::http::status::ok) {
+          if (res.result() == http::status::ok) {
             std::unique_lock<std::mutex> lock(http_mutex);
             try {
               stream_infos = std::make_shared<net::stream_infos_t>();

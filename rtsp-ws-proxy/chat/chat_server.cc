@@ -18,7 +18,7 @@ ChatServer::~ChatServer() {
 }
 
 void ChatServer::DoSessionWebSocket(
-    beast::websocket::stream<beast::tcp_stream> &&ws,
+    websocket::stream<beast::tcp_stream> &&ws,
     boost::optional<http_req_t> &&req) {
   auto s = std::make_shared<ChatSession>(std::move(ws), std::move(req), room_);
   s->SetEventCallback(net::NET_EVENT_FAIL,

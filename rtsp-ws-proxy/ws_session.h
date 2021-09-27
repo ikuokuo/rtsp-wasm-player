@@ -20,9 +20,8 @@ class WsSession
  public:
   using data_t = Data;
   using ws_stream_t = websocket::stream<beast::tcp_stream>;
-  using http_req_t = beast::http::request<
-      beast::http::string_body,
-      beast::http::basic_fields<std::allocator<char>>>;
+  using http_req_t = http::request<
+      http::string_body, http::basic_fields<std::allocator<char>>>;
   using virtual_enable_shared_from_this<WsSession<Data>>::shared_from_this;
 
   WsSession(ws_stream_t &&ws, boost::optional<http_req_t> &&req,

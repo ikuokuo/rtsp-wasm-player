@@ -13,7 +13,7 @@ class ChatServer : public WsServer {
 
  protected:
   void DoSessionWebSocket(
-      beast::websocket::stream<beast::tcp_stream> &&ws,
+      websocket::stream<beast::tcp_stream> &&ws,
       boost::optional<http_req_t> &&req) override;
 
   std::shared_ptr<ChatRoom> room_;

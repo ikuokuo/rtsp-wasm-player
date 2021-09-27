@@ -18,10 +18,8 @@ struct HttpClientOptions {
 
   using on_fail_t =
       std::function<void(beast::error_code ec, char const *what)>;
-  using response_t =
-      beast::http::response<beast::http::dynamic_body>;
-  using on_response_t =
-      std::function<void(const response_t &)>;
+  using response_t = http::response<http::dynamic_body>;
+  using on_response_t = std::function<void(const response_t &)>;
 
   on_fail_t on_fail = nullptr;
   on_response_t on_response = nullptr;

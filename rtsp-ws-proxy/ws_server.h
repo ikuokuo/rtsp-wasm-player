@@ -8,9 +8,8 @@
 
 class WsServer {
  public:
-  using http_req_t = beast::http::request<
-      beast::http::string_body,
-      beast::http::basic_fields<std::allocator<char>>>;
+  using http_req_t = http::request<
+      http::string_body, http::basic_fields<std::allocator<char>>>;
 
   explicit WsServer(const WsServerOptions &options);
   virtual ~WsServer();
@@ -30,7 +29,7 @@ class WsServer {
       asio::yield_context yield);
 
   virtual void DoSessionWebSocket(
-      beast::websocket::stream<beast::tcp_stream> &&ws,
+      websocket::stream<beast::tcp_stream> &&ws,
       boost::optional<http_req_t> &&req);
 
   virtual bool OnHandleHttpRequest(

@@ -175,8 +175,7 @@ void WsServer::DoSessionHTTP(
     // LOG(INFO) << "http req: " << http_req.target();
     auto handled = OnHandleHttpRequest(http_req, lambda);
     if (!handled) {
-      net::handle_request(options_.http.doc_root,
-                             std::move(http_req), lambda);
+      net::handle_request(options_.http.doc_root, std::move(http_req), lambda);
       if (ec) return OnFail(ec, "write");
     }
 
@@ -194,7 +193,7 @@ void WsServer::DoSessionHTTP(
 }
 
 void WsServer::DoSessionWebSocket(
-    beast::websocket::stream<beast::tcp_stream> &&ws,
+    websocket::stream<beast::tcp_stream> &&ws,
     boost::optional<http_req_t> &&req) {
   auto s = std::make_shared<WsSession<std::string>>(
       std::move(ws), std::move(req));

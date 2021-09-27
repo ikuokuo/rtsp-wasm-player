@@ -46,7 +46,7 @@ void WsStreamServer::Send(
 }
 
 void WsStreamServer::DoSessionWebSocket(
-    beast::websocket::stream<beast::tcp_stream> &&ws,
+    websocket::stream<beast::tcp_stream> &&ws,
     boost::optional<http_req_t> &&http_req) {
   assert(http_req.has_value());
 
