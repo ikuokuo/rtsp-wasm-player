@@ -208,8 +208,8 @@ struct convert<StreamOptions> {
 namespace YAML {
 
 template <>
-struct convert<net::Options> {
-  static bool decode(const Node &node, net::Options &opts) {
+struct convert<net::CorsOptions> {
+  static bool decode(const Node &node, net::CorsOptions &opts) {
     auto parseAsStrings = [](const std::string &k,
                              const YAML::Node &n,
                              std::vector<std::string> &v) {

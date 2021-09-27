@@ -173,7 +173,7 @@ int LoadConfig(const std::string &path, Config *config) {
       }
 
       if (node_server["cors"])
-        options.cors = node_server["cors"].as<net::Options>();
+        options.cors = node_server["cors"].as<net::CorsOptions>();
 
       if (node_server["stream"]) {
         auto node_stream = node_server["stream"];

@@ -1,10 +1,9 @@
 #include "ws_server.h"
 
+#include <string>
 #include <thread>
 #include <utility>
 #include <vector>
-
-#include <boost/asio/signal_set.hpp>
 
 #include "common/util/log.h"
 #include "ws_session.h"

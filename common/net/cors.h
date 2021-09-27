@@ -17,7 +17,7 @@ namespace net {
 namespace beast = boost::beast;
 namespace http = beast::http;
 
-struct Options {
+struct CorsOptions {
   bool enabled;
   std::vector<std::string> allowed_origins;
   std::vector<std::string> allowed_methods;
@@ -33,7 +33,7 @@ template <typename Body = http::string_body,
           typename Allocator = std::allocator<char>>
 class Cors {
  public:
-  explicit Cors(const Options &options)
+  explicit Cors(const CorsOptions &options)
     : options_(options),
       allowed_origins_all_(
           std::find(options.allowed_origins.begin(),
@@ -206,7 +206,7 @@ class Cors {
     return true;
   }
 
-  Options options_;
+  CorsOptions options_;
   bool allowed_origins_all_;
   bool allowed_headers_all_;
 };
