@@ -15,7 +15,7 @@ WsStreamSession::WsStreamSession(
     std::shared_ptr<WsStreamRoom> room)
   : WsSession(std::move(ws), std::move(req), 1),
     id_(std::move(id)), room_(std::move(room)) {
-  auto ep = ws_.next_layer().socket().remote_endpoint();
+  auto ep = beast::get_lowest_layer(ws_).socket().remote_endpoint();
   who_ = boost::lexical_cast<std::string>(ep);
   VLOG(2) << __func__ << " " << who_;
 }

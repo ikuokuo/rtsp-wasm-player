@@ -1,10 +1,12 @@
-#include "ws_server.h"
+#include "ws_server_plain.h"
 
+#include <memory>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
 
+#include "common/net/ext.h"
 #include "common/util/log.h"
 #include "ws_session.h"
 
@@ -127,8 +129,7 @@ void WsServer::DoListen(
 
 // Handles an HTTP server connection
 void WsServer::DoSessionHTTP(
-    beast::tcp_stream &stream,
-    asio::yield_context yield) {
+    tcp_stream_t &stream, asio::yield_context yield) {
   bool close = false;
   beast::error_code ec;
 
@@ -140,7 +141,7 @@ void WsServer::DoSessionHTTP(
   boost::optional<http::request_parser<http::string_body>> parser;
 
   // This lambda is used to send messages
-  net::send_lambda lambda{stream, close, ec, yield};
+  send_lambda_t lambda{stream, close, ec, yield};
 
   for (;;) {
     // Construct a new parser for each message
@@ -168,7 +169,7 @@ void WsServer::DoSessionHTTP(
       DoSessionWebSocket(
           websocket::stream<beast::tcp_stream>(
               std::move(stream.release_socket())),
-          boost::optional<http_req_t>(http_req));
+          boost::optional<net::http_req_t>(http_req));
       return;
     }
 
@@ -193,8 +194,7 @@ void WsServer::DoSessionHTTP(
 }
 
 void WsServer::DoSessionWebSocket(
-    websocket::stream<beast::tcp_stream> &&ws,
-    boost::optional<http_req_t> &&req) {
+    ws_stream_t &&ws, boost::optional<http_req_t> &&req) {
   auto s = std::make_shared<WsSession<std::string>>(
       std::move(ws), std::move(req));
   s->SetEventCallback(net::NET_EVENT_FAIL,
@@ -218,8 +218,7 @@ void WsServer::DoSessionWebSocket(
 }
 
 bool WsServer::OnHandleHttpRequest(
-    http_req_t &req,
-    net::send_lambda &send) {
+    http_req_t &req, send_lambda_t &send) {
   (void)req;
   (void)send;
   return false;

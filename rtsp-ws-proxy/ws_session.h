@@ -13,15 +13,16 @@
 #include "common/util/ptr.h"
 #include "common/util/times.h"
 
+#include "ws_def.h"
+
 template <typename Data>
 class WsSession
   : public net::NetEventManager,
     public virtual_enable_shared_from_this<WsSession<Data>> {
  public:
   using data_t = Data;
-  using ws_stream_t = websocket::stream<beast::tcp_stream>;
-  using http_req_t = http::request<
-      http::string_body, http::basic_fields<std::allocator<char>>>;
+  using ws_stream_t = net::ws_stream_t;
+  using http_req_t = net::http_req_t;
   using virtual_enable_shared_from_this<WsSession<Data>>::shared_from_this;
 
   WsSession(ws_stream_t &&ws, boost::optional<http_req_t> &&req,

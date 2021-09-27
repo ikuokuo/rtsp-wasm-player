@@ -46,8 +46,7 @@ void WsStreamServer::Send(
 }
 
 void WsStreamServer::DoSessionWebSocket(
-    websocket::stream<beast::tcp_stream> &&ws,
-    boost::optional<http_req_t> &&http_req) {
+    ws_stream_t &&ws, boost::optional<http_req_t> &&http_req) {
   assert(http_req.has_value());
 
   auto req = http_req.get();
@@ -60,7 +59,8 @@ void WsStreamServer::DoSessionWebSocket(
   static auto stream_path_len = options_.stream.ws_target_prefix.size();
   auto stream_id = std::string(target.substr(stream_path_len));
   LOG(INFO) << "ws stream granted, id=" << stream_id;
-  LOG(INFO) << " client, ip=" << ws.next_layer().socket().remote_endpoint();
+  LOG(INFO) << " client, ip="
+      << beast::get_lowest_layer(ws).socket().remote_endpoint();
 
   if (stream_map_.find(stream_id) == stream_map_.end()) {
     LOG(WARNING) << "ws stream not found, id=" << stream_id;
@@ -78,8 +78,7 @@ void WsStreamServer::DoSessionWebSocket(
 }
 
 bool WsStreamServer::OnHandleHttpRequest(
-    http_req_t &req,
-    net::send_lambda &send) {
+    http_req_t &req, send_lambda_t &send) {
   (void)send;
 
   auto target = req.target();

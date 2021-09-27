@@ -190,6 +190,7 @@ src/main.cc ../common/media/*.cc \
 # if wanna use threads, you should:
 #  1. rebuild the wasm libs with `-s USE_PTHREADS=1`
 #  2. set decode_* options in ws-wasm-player/lib/ws_client.js
+#  3. build rtsp-ws-proxy with ssl (recommended)
 emcc -std=c++14 -Os -DNDEBUG -s WASM=1 -s USE_SDL=2 -v \
 -s INITIAL_MEMORY=104857600 -s USE_PTHREADS=1 \
 ...
@@ -241,6 +242,9 @@ cd rtsp-ws-proxy
 
 # build
 make
+# if wanna build with ssl (COOP need https, otherwise localhost only)
+sudo apt install libssl-dev -y
+make CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_install -DUSE_SSL=ON"
 
 # run
 ./_output/bin/rtsp-ws-proxy ./config.yaml
@@ -260,6 +264,10 @@ cd ws-wasm-player
 
 # Method 1. serve by rtsp-ws-proxy if default config
 # open http://127.0.0.1:8080 in browser
+#  use https if build with ssl, don't forget to import SSL certificate:
+#   1. create: https://stackoverflow.com/a/60516812
+#   2. change: common/net/server_certificate.hpp
+#   3. import: chrome://settings/certificates
 
 # Method 2. serve by python http server
 python -m http.server 8000

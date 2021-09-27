@@ -5,7 +5,7 @@ add_executable(chat-server
   chat_room.cc
   chat_server.cc
   chat_session.cc
-  ../ws_server.cc
+  ../ws_server_plain.cc
 )
 target_link_libraries(chat-server
   ${Boost_LIBRARIES} glog::glog yaml-cpp

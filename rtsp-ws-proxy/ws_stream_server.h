@@ -22,12 +22,10 @@ class WsStreamServer : public WsServer {
 
  protected:
   void DoSessionWebSocket(
-      websocket::stream<beast::tcp_stream> &&ws,
-      boost::optional<http_req_t> &&req) override;
+      ws_stream_t &&ws, boost::optional<http_req_t> &&req) override;
 
   bool OnHandleHttpRequest(
-      http_req_t &req,
-      net::send_lambda &send) override;
+      http_req_t &req, send_lambda_t &send) override;
 
   std::shared_ptr<net::Cors<>> cors_;
   std::shared_ptr<WsStreamRoom> room_;

@@ -17,6 +17,8 @@ msg_var(MY_CURR)
 msg_var(MY_ROOT)
 msg_var(MY_3RDPARTY)
 
+option(USE_SSL "Use SSL" OFF)
+
 # cmake
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -60,6 +62,13 @@ if(Boost_NO_SYSTEM_PATHS)
 endif()
 find_package(Boost 1.76 REQUIRED context coroutine)
 
+## openssl
+
+if(USE_SSL)
+  find_package(OpenSSL REQUIRED)
+  msg_var(OPENSSL_VERSION)
+endif()
+
 ## ffmpeg
 
 set(ENV{PKG_CONFIG_PATH} "${MY_3RDPARTY}/ffmpeg/lib/pkgconfig")
@@ -89,6 +98,7 @@ include(${MY_ROOT}/cmake/detect_gl.cmake)
 include_directories(
   ${MY_ROOT}
   ${Boost_INCLUDE_DIRS}
+  ${OPENSSL_INCLUDE_DIR}
   ${GL_INCLUDE_DIRS}
   ${MY_3RDPARTY}/json/single_include
 )
@@ -108,11 +118,10 @@ endforeach()
 
 ## rtsp-ws-proxy
 
-add_executable(rtsp-ws-proxy
+set(_srcs
   ${MY_COMMON_GL_SRCS}
   ${MY_COMMON_MEDIA_SRCS}
   main.cc
-  ws_server.cc
   ws_stream_room.cc
   ws_stream_server.cc
   ws_stream_session.cc
@@ -121,9 +130,19 @@ add_executable(rtsp-ws-proxy
   stream_handler.cc
   stream_player.cc
 )
+if(USE_SSL)
+  list(APPEND _srcs ws_server_ssl.cc)
+else()
+  list(APPEND _srcs ws_server_plain.cc)
+endif()
+add_executable(rtsp-ws-proxy ${_srcs})
 target_link_libraries(rtsp-ws-proxy
-  ${Boost_LIBRARIES} PkgConfig::ffmpeg glog::glog yaml-cpp ${GL_LIBS}
+  ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} PkgConfig::ffmpeg glog::glog yaml-cpp ${GL_LIBS}
 )
+if(USE_SSL)
+  target_compile_definitions(rtsp-ws-proxy PRIVATE MY_USE_SSL)
+endif()
+unset(_srcs)
 
 # install
 

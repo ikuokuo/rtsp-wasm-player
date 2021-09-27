@@ -1,40 +1,17 @@
 #pragma once
 
-#include <memory>
+#ifdef MY_USE_SSL
 
-#include "common/net/ext.h"
+#include "ws_server_ssl.h"
 
-#include "ws_server_def.h"
+using WsServer = WsServerSSL;
 
-class WsServer {
- public:
-  using http_req_t = http::request<
-      http::string_body, http::basic_fields<std::allocator<char>>>;
+#else
 
-  explicit WsServer(const WsServerOptions &options);
-  virtual ~WsServer();
+#include "ws_server_plain.h"
 
-  void Run();
+#endif
 
- protected:
-  virtual void OnFail(beast::error_code ec, char const *what);
-
-  void DoListen(
-      asio::io_context &ioc,
-      asio::ip::tcp::endpoint endpoint,
-      asio::yield_context yield);
-
-  void DoSessionHTTP(
-      beast::tcp_stream &stream,
-      asio::yield_context yield);
-
-  virtual void DoSessionWebSocket(
-      websocket::stream<beast::tcp_stream> &&ws,
-      boost::optional<http_req_t> &&req);
-
-  virtual bool OnHandleHttpRequest(
-      http_req_t &req,
-      net::send_lambda &send);
-
-  WsServerOptions options_;
-};
+// If wanna http & https works together, see example:
+// Advanced, flex (plain + SSL)
+//  https://github.com/boostorg/beast/blob/develop/example/advanced/server-flex/advanced_server_flex.cpp

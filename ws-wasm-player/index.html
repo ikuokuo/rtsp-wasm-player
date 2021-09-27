@@ -161,8 +161,13 @@
           isIp(url.hostname) && $('#input_host').val(url.hostname);
           isPort(url.port) && $('#input_port').val(url.port);
 
+          config.protocol = { http: "http", ws: "ws" };
+          if (url.protocol === "https:") {
+            config.protocol = { http: "https", ws: "wss" };
+          }
+
           // input
-          const getUrl = (protocol='http') => {
+          const getUrl = (protocol=config.protocol.http) => {
             return `${protocol}://${$('#input_host').val()}:${$('#input_port').val()}`;
           }
           const updateStreamUrl = () => {
@@ -284,7 +289,7 @@
                 return;
               }
               client.open({
-                url: `${getUrl('ws')}/stream/${stream.id}`,
+                url: `${getUrl(config.protocol.ws)}/stream/${stream.id}`,
                 stream: stream,
                 player: player,
               });
