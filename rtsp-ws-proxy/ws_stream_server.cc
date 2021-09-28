@@ -68,7 +68,8 @@ void WsStreamServer::DoSessionWebSocket(
   }
 
   auto s = std::make_shared<WsStreamSession>(
-      std::move(ws), std::move(req), stream_id, room_);
+      std::move(ws), std::move(req),
+      options_.stream.send_queue_max_size, stream_id, room_);
   s->SetEventCallback(net::NET_EVENT_FAIL,
       [this](const std::shared_ptr<WsStreamSession::event_t> &event) {
         auto e = std::dynamic_pointer_cast<net::NetFailEvent>(event);

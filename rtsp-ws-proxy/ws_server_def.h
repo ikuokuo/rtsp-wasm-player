@@ -34,6 +34,7 @@ struct WsServerOptions {
   struct Stream {
     std::string http_target = "/streams";
     std::string ws_target_prefix = "/stream/";
+    int send_queue_max_size = 1;  // set if >= 1
   } stream{};
 
   bool signal_exit_enable = true;

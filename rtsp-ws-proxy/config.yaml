@@ -39,6 +39,7 @@ server:
   stream:
     http_target: "/streams"
     ws_target_prefix: "/stream/"
+    send_queue_max_size: 2
 
 streams:
   -

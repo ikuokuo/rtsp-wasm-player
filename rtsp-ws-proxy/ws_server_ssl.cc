@@ -265,10 +265,8 @@ void WsServerSSL::DoSessionHTTP(
 
 void WsServerSSL::DoSessionWebSocket(
     ws_stream_t &&ws, boost::optional<http_req_t> &&req) {
-  (void)ws;
-  (void)req;
   auto s = std::make_shared<WsSession<std::string>>(
-      std::move(ws), std::move(req));
+      std::move(ws), std::move(req), "", options_.stream.send_queue_max_size);
   s->SetEventCallback(net::NET_EVENT_FAIL,
       [this](const std::shared_ptr<WsSession<std::string>::event_t> &event) {
         auto e = std::dynamic_pointer_cast<net::NetFailEvent>(event);

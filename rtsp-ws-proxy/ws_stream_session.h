@@ -17,6 +17,7 @@ class WsStreamSession
   using virtual_enable_shared_from_this<WsStreamSession>::shared_from_this;
 
   WsStreamSession(ws_stream_t &&ws, boost::optional<http_req_t> &&req,
+      std::size_t send_queue_max_size,
       std::string id, std::shared_ptr<WsStreamRoom> room);
   ~WsStreamSession() override;
 
@@ -28,5 +29,4 @@ class WsStreamSession
 
   std::string id_;
   std::shared_ptr<WsStreamRoom> room_;
-  std::string who_;
 };

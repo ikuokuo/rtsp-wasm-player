@@ -27,5 +27,4 @@ class ChatSession
   void OnEventRecv(beast::flat_buffer &buffer, std::size_t bytes_n) override;
 
   std::shared_ptr<ChatRoom> room_;
-  std::string who_;
 };

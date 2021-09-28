@@ -26,7 +26,7 @@ class WsSession
   using virtual_enable_shared_from_this<WsSession<Data>>::shared_from_this;
 
   WsSession(ws_stream_t &&ws, boost::optional<http_req_t> &&req,
-      std::size_t send_queue_max_size = 5);
+      std::string tag, std::size_t send_queue_max_size);
   virtual ~WsSession();
 
   void Run();
@@ -44,6 +44,7 @@ class WsSession
 
   ws_stream_t ws_;
   boost::optional<http_req_t> req_;
+  std::string tag_;
 
   beast::flat_buffer read_buffer_;
   std::vector<std::shared_ptr<Data>> send_queue_;
@@ -54,15 +55,19 @@ class WsSession
 
 template <typename Data>
 WsSession<Data>::WsSession(ws_stream_t &&ws, boost::optional<http_req_t> &&req,
-    std::size_t send_queue_max_size)
+    std::string tag, std::size_t send_queue_max_size)
   : ws_(std::move(ws)), req_(std::move(req)),
-    send_queue_max_size_(send_queue_max_size) {
-  VLOG(2) << __func__;
+    tag_(std::move(tag)), send_queue_max_size_(send_queue_max_size) {
+  VLOG(2) << __func__ << "[" << tag_ << "]";
+  if (send_queue_max_size_ <= 0) {
+    LOG(WARNING) << __func__ << "[" << tag_ << "] send_queue_max_size set to 1";
+    send_queue_max_size_ = 1;
+  }
 }
 
 template <typename Data>
 WsSession<Data>::~WsSession() {
-  VLOG(2) << __func__;
+  VLOG(2) << __func__ << "[" << tag_ << "]";
 }
 
 template <typename Data>
@@ -174,7 +179,7 @@ void WsSession<Data>::OnWrite(
     beast::error_code ec, std::size_t bytes_transferred) {
   (void)bytes_transferred;
 
-  VLOG(2) << "WsSession write cost " <<
+  VLOG(2) << "WsSession[" << tag_ << "] write cost " <<
       times::count<times::microseconds>(times::now() - time_write_) * 0.001
       << " ms";
 
@@ -187,7 +192,7 @@ void WsSession<Data>::OnWrite(
   send_queue_.erase(send_queue_.begin());
 
   if (send_queue_max_size_ > 0 && send_queue_.size() > send_queue_max_size_) {
-    LOG(WARNING) << "WsSession send queue size="
+    LOG(WARNING) << "WsSession[" << tag_ << "] send queue size="
         << send_queue_.size() << " > " << send_queue_max_size_
         << ", erase eldest ones";
     send_queue_.erase(send_queue_.begin(),

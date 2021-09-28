@@ -190,6 +190,9 @@ int LoadConfig(const std::string &path, Config *config) {
         if (node_stream["ws_target_prefix"])
           options.stream.ws_target_prefix =
               node_stream["ws_target_prefix"].as<std::string>();
+        if (node_stream["send_queue_max_size"])
+          options.stream.send_queue_max_size =
+              node_stream["send_queue_max_size"].as<int>();
       }
     }
 
