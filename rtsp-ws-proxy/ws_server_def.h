@@ -22,6 +22,11 @@ struct WsServerOptions {
     //  "": deny access the filesystem
     //  "/", "//": will access the filesystem root
     std::string doc_root = ".";
+
+    // https only
+    std::string ssl_crt = "";  // required
+    std::string ssl_key = "";  // required
+    std::string ssl_dh  = "";  // optional
   } http{};
 
   net::CorsOptions cors{};

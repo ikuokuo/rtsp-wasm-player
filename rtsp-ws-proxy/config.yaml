@@ -20,6 +20,10 @@ server:
   http:
     enable: true
     doc_root: "../ws-wasm-player/"
+    # https
+    ssl_crt: "./ssl/mydomain.com.crt"
+    ssl_key: "./ssl/mydomain.com.key"
+    # ssl_dh: ""
 
   cors:
     enabled: true

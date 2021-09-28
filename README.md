@@ -266,7 +266,7 @@ cd ws-wasm-player
 # open http://127.0.0.1:8080 in browser
 #  use https if build with ssl, don't forget to import SSL certificate:
 #   1. create: https://stackoverflow.com/a/60516812
-#   2. change: common/net/server_certificate.hpp
+#   2. change: rtsp-ws-proxy/config.yaml server.http.ssl_*
 #   3. import: chrome://settings/certificates
 
 # Method 2. serve by python http server

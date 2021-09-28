@@ -170,6 +170,13 @@ int LoadConfig(const std::string &path, Config *config) {
           options.http.enable = node_http["enable"].as<bool>();
         if (node_http["doc_root"])
           options.http.doc_root = node_http["doc_root"].as<std::string>();
+
+        if (node_http["ssl_crt"])
+          options.http.ssl_crt = node_http["ssl_crt"].as<std::string>();
+        if (node_http["ssl_key"])
+          options.http.ssl_key = node_http["ssl_key"].as<std::string>();
+        if (node_http["ssl_dh"])
+          options.http.ssl_dh = node_http["ssl_dh"].as<std::string>();
       }
 
       if (node_server["cors"])

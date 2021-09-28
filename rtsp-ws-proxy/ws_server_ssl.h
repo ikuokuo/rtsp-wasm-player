@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef MY_USE_SSL
+# define MY_USE_SSL  // correct lint
+#endif
 #include "ws_server_def.h"
 
 class WsServerSSL {
@@ -15,6 +18,8 @@ class WsServerSSL {
   void Run();
 
  protected:
+  void LoadServerCertificate(ssl::context &ctx);
+
   virtual void OnFail(beast::error_code ec, char const *what);
 
   void DoListen(

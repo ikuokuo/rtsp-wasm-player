@@ -1,13 +1,15 @@
 #include "ws_server_ssl.h"
 
+#include <fstream>
 #include <memory>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
 
+#include <boost/asio/buffer.hpp>
+
 #include "common/net/ext.h"
-#include "common/net/server_certificate.hpp"
 #include "common/util/log.h"
 #include "ws_session.h"
 
@@ -31,7 +33,7 @@ void WsServerSSL::Run() {
   ssl::context ctx{ssl::context::tlsv12};
 
   // This holds the self-signed certificate used by the server
-  load_server_certificate(ctx);
+  LoadServerCertificate(ctx);
 
   // Spawn a listening port
   asio::spawn(ioc, std::bind(
@@ -81,6 +83,49 @@ void WsServerSSL::Run() {
     // Block until all the threads exit
     for (auto &t : v)
       t.join();
+  }
+}
+
+// https://github.com/boostorg/beast/blob/develop/example/common/server_certificate.hpp
+void WsServerSSL::LoadServerCertificate(ssl::context &ctx) {
+  auto read_content = [](const std::string &path, const std::string &name) {
+    LOG_IF(FATAL, path.empty()) << "WsServerSSL load cert fail: "
+        << name << " path is empty";
+    try {
+      std::ifstream ifs(path);
+      LOG_IF(FATAL, !ifs.is_open()) << "WsServerSSL load cert fail: " << path
+          << ", file is not open";
+      return std::string(std::istreambuf_iterator<char>(ifs),
+                         std::istreambuf_iterator<char>());
+    } catch (std::exception &e) {
+      LOG(FATAL) << "WsServerSSL load cert fail: " << path << ", " << e.what();
+    }
+    return std::string();
+  };
+
+  ctx.set_password_callback(
+      [](std::size_t, ssl::context_base::password_purpose) {
+        return "test";
+      });
+
+  ctx.set_options(
+      ssl::context::default_workarounds |
+      ssl::context::no_sslv2 |
+      ssl::context::single_dh_use);
+
+  auto crt = read_content(options_.http.ssl_crt, "ssl_crt");
+  ctx.use_certificate_chain(
+      asio::buffer(crt.data(), crt.size()));
+
+  auto key = read_content(options_.http.ssl_key, "ssl_key");
+  ctx.use_private_key(
+      asio::buffer(key.data(), key.size()),
+      ssl::context::file_format::pem);
+
+  if (!options_.http.ssl_dh.empty()) {
+    auto dh = read_content(options_.http.ssl_dh, "ssl_dh");
+    ctx.use_tmp_dh(
+        asio::buffer(dh.data(), dh.size()));
   }
 }
 
