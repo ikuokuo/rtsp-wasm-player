@@ -35,6 +35,7 @@ class WsClient {
   #options;
   #ws = null;
   #decoder = null;
+  #t_onmsg = Date.now();
 
   constructor(options) {
     this.#options = { ...WsClientOptions, ...options };
@@ -111,12 +112,16 @@ class WsClient {
   }
 
   #onmessage(e) {
-    this.#logd(`ws message: ${this.#options.url}`);
-    this.#options.onmessage && this.#options.onmessage(e);
+    if (this.#options.dbg) {
+      const t = Date.now();
+      this.#logd(`ws message: ${this.#options.url}` +
+          `, interval: ${t - this.#t_onmsg} ms`);
+      this.#t_onmsg = t;
+    }
+    this.#options.dbg && console.time("ws onmessage");
 
     let data = new Uint8Array(e.data);
     if (this.#decoder) {
-      // this.#options.dbg && console.time("ws decode");
       const buf = Module._malloc(data.length);
       try {
         Module.HEAPU8.set(data, buf);
@@ -131,13 +136,15 @@ class WsClient {
       } finally {
         Module._free(buf);
       }
-      // this.#options.dbg && console.timeEnd("ws decode");
     } else {
       this.#options.ondata && this.#options.ondata(data);
     }
+
+    this.#options.dbg && console.timeEnd("ws onmessage");
   }
 
   #ondecode(frame) {
+    this.#options.dbg && console.time("ws ondecode");
     if (frame != null) {
       this.#logd(`ws frame size=${frame.width}x${frame.height}`);
       const player = this.#options.player;
@@ -153,6 +160,7 @@ class WsClient {
     } else {
       this.#logd("ws frame is null: decode error or need new packets");
     }
+    this.#options.dbg && console.timeEnd("ws ondecode");
   }
 
   #onclose(e) {
