@@ -171,7 +171,7 @@
             return `${protocol}://${$('#input_host').val()}:${$('#input_port').val()}`;
           }
           const updateStreamUrl = () => {
-            $('#stream_url').html(`${getUrl()}/stream/`);
+            $('#stream_url').html(`${getUrl(config.protocol.ws)}/stream/`);
           };
           $('#input_host').on('input', function() {
             if (isIp($(this).val())) {
