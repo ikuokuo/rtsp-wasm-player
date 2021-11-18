@@ -11,7 +11,7 @@ const WsClientOptions = {
   // need pthreads support
   //  COOP, COEP headers are correctly set
   //  https://emscripten.org/docs/porting/pthreads.html
-  // decode_async: true,
+  // decode_async: false,  // not works well as clone frame not supported
   // decode_queue_size: 10,
   // decode_thread_count: 4,
   // // 1: FF_THREAD_FRAME, 2: FF_THREAD_SLICE

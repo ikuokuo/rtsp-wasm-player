@@ -137,6 +137,8 @@ class Decoder {
     }
   }
 
+  // not works well as clone frame not supported in frame.h
+  //  otherwise alloc more frames for decoding from packets when op->GetFrame()
   void DecodeAsync(uintptr_t buf_p, int buf_size) {
     ThreadStart();
 
