@@ -146,7 +146,7 @@ class WsClient {
   #ondecode(frame) {
     this.#options.dbg && console.time("ws ondecode");
     if (frame != null) {
-      this.#logd(`ws frame size=${frame.width}x${frame.height}`);
+      this.#logd(`ws frame size=${frame.width}x${frame.height}, pts=${frame.pts}`);
       const player = this.#options.player;
       if (player) {
         if (player instanceof WebGLPlayer) {

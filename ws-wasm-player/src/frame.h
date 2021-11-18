@@ -53,7 +53,9 @@ class Frame : public std::enable_shared_from_this<Frame> {
   int width() const { return frame_->width; }
   int height() const { return frame_->height; }
   int format() const { return frame_->format; }
-  int64_t pts() const { return frame_->pts; }
+  // int64_t in C++ results in UnboundTypeError
+  //  https://github.com/emscripten-core/emscripten/issues/11140
+  double pts() const { return frame_->pts; }
 
   int data_ptr() const { return (int)(frame_->data[0]); }  // NOLINT
   int size() const {

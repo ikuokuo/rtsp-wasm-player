@@ -144,6 +144,7 @@ AVFrame *StreamVideoOp::GetFrame(AVPacket *packet) {
       sws_frame_->data, sws_frame_->linesize);
     t->End();
 
+    sws_frame_->pts = frame_->pts;
     result = sws_frame_;
   }
 
